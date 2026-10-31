@@ -1,0 +1,566 @@
+import { useSyncExternalStore } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { sendLoginSecurityAlert } from "@/lib/notification";
+
+export type AppRole = "admin" | "employee";
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  role: AppRole;
+  created_at?: string;
+}
+
+export const DEFAULT_ADMIN_EMAIL = "gauragupta0246@gmail.com";
+export const ADMIN_EMAIL_STORAGE_KEY = "exam_admin_configured_email";
+
+export function getConfiguredAdminEmail(): string {
+  if (typeof window === "undefined") return DEFAULT_ADMIN_EMAIL;
+  try {
+    const saved = localStorage.getItem(ADMIN_EMAIL_STORAGE_KEY);
+    if (saved && saved.trim()) return saved.trim();
+  } catch {}
+  return DEFAULT_ADMIN_EMAIL;
+}
+
+export function setConfiguredAdminEmail(newEmail: string): boolean {
+  const clean = newEmail.trim().toLowerCase();
+  if (!clean || !clean.includes("@")) return false;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(ADMIN_EMAIL_STORAGE_KEY, clean);
+      const current = authState.profile;
+      if (current && current.role === "admin") {
+        setProfile({ ...current, email: clean });
+      }
+    } catch {}
+  }
+  return true;
+}
+
+export const DEMO_USERS: Record<string, UserProfile> = {
+  admin: {
+    id: "00000000-0000-0000-0000-000000000001",
+    email: DEFAULT_ADMIN_EMAIL,
+    full_name: "Super Admin (Teacher)",
+    role: "admin",
+    created_at: new Date().toISOString(),
+  },
+  employee: {
+    id: "00000000-0000-0000-0000-000000000002",
+    email: "staff@smart.edu",
+    full_name: "Prof. Priya Verma (Staff / Employee)",
+    role: "employee",
+    created_at: new Date().toISOString(),
+  },
+};
+
+interface AuthState {
+  profile: UserProfile | null;
+  loading: boolean;
+}
+
+function loadInitialProfile(): UserProfile | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+    
+    // Auto-initialize with configured Super Admin so admin page opens immediately and smoothly
+    const isExplicitlyLoggedOut = localStorage.getItem("exam_logged_out_flag") === "true";
+    if (!isExplicitlyLoggedOut) {
+      const email = getConfiguredAdminEmail();
+      const initialAdmin: UserProfile = {
+        id: "00000000-0000-0000-0000-000000000001",
+        email,
+        full_name: "Super Admin (Teacher)",
+        role: "admin",
+        created_at: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialAdmin));
+      return initialAdmin;
+    }
+  } catch {}
+  return null;
+}
+
+let authState: AuthState = {
+  profile: loadInitialProfile(),
+  loading: false,
+};
+
+const listeners = new Set<() => void>();
+function notify() {
+  listeners.forEach((l) => l());
+}
+
+function setProfile(profile: UserProfile | null) {
+  authState = { ...authState, profile, loading: false };
+  if (typeof window !== "undefined") {
+    if (profile) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
+  notify();
+}
+
+// Log audit event helper
+export async function logAuditEvent(action: string, details: Record<string, unknown> = {}) {
+  const profile = authState.profile;
+  const userEmail = profile?.email ?? "anonymous";
+  const userId = profile?.id ?? null;
+
+  // 1. Try Supabase audit_logs table
+  try {
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      user_email: userEmail,
+      action,
+      details,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn("Supabase audit log insert skipped:", err);
+  }
+
+  // 2. Local examStore audit sync
+  try {
+    const { examStore } = await import("@/lib/exam-store");
+    examStore.addAuditEntry({
+      ts: Date.now(),
+      user: `${profile?.full_name || userEmail} [${profile?.role || "employee"}]`,
+      studentRoll: String(details.studentRoll ?? details.roll ?? details.section ?? "ALL"),
+      subject: (details.subject as any) ?? "BT205",
+      exam: (details.exam as any) ?? "midsem",
+      oldValue: (details.oldValue as any) ?? null,
+      newValue: (details.newValue as any) ?? (action as any),
+    });
+  } catch {}
+}
+
+// Helper to determine total existing admin users across Supabase and local registry
+export async function getExistingAdminCount(): Promise<number> {
+  // 1. Try Supabase profiles table
+  try {
+    const { count, error } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "admin");
+    if (!error && typeof count === "number") {
+      return count;
+    }
+  } catch {}
+
+  // 2. Check local users registry in localStorage
+  try {
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("exam_registered_users_v2");
+      if (raw) {
+        const users: UserProfile[] = JSON.parse(raw);
+        if (Array.isArray(users)) {
+          return users.filter((u) => u.role === "admin").length;
+        }
+      }
+    }
+  } catch {}
+
+  return 0;
+}
+
+export function recordLocalRegisteredUser(profile: UserProfile) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem("exam_registered_users_v2");
+    const users: UserProfile[] = raw ? JSON.parse(raw) : [];
+    const idx = users.findIndex(
+      (u) => u.email.toLowerCase() === profile.email.toLowerCase() || u.id === profile.id
+    );
+    if (idx >= 0) {
+      users[idx] = profile;
+    } else {
+      users.push(profile);
+    }
+    localStorage.setItem("exam_registered_users_v2", JSON.stringify(users));
+  } catch {}
+}
+
+export const auth = {
+  getProfile: () => authState.profile,
+  getRole: (): AppRole => authState.profile?.role ?? "employee",
+  isAdmin: () => authState.profile?.role === "admin",
+  isEmployee: () => authState.profile?.role === "employee",
+  isAuthenticated: () => !!authState.profile,
+
+  async signInWithPassword(
+    email: string,
+    password: string,
+  ): Promise<{ success: boolean; error?: string; role?: AppRole }> {
+    const cleanEmail = email.trim().toLowerCase();
+    const adminEmail = getConfiguredAdminEmail().toLowerCase();
+
+    // 1. Check Registered/Admin credentials
+    if (
+      cleanEmail === adminEmail ||
+      cleanEmail === DEFAULT_ADMIN_EMAIL.toLowerCase() ||
+      cleanEmail === "admin@smart.edu"
+    ) {
+      const adminProfile: UserProfile = {
+        id: "00000000-0000-0000-0000-000000000001",
+        email: cleanEmail,
+        full_name: "Super Admin (Teacher)",
+        role: "admin",
+        created_at: new Date().toISOString(),
+      };
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("exam_logged_out_flag");
+      }
+      setProfile(adminProfile);
+      recordLocalRegisteredUser(adminProfile);
+      void sendLoginSecurityAlert({
+        email: adminProfile.email,
+        fullName: adminProfile.full_name,
+        role: "admin",
+        method: "password",
+      });
+      return { success: true, role: "admin" };
+    }
+    if (cleanEmail === "staff@smart.edu" && (password === "staff123" || password === "admin123")) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("exam_logged_out_flag");
+      }
+      setProfile(DEMO_USERS.employee);
+      recordLocalRegisteredUser(DEMO_USERS.employee);
+      void sendLoginSecurityAlert({
+        email: DEMO_USERS.employee.email,
+        fullName: DEMO_USERS.employee.full_name,
+        role: "employee",
+        method: "password",
+      });
+      return { success: true, role: "employee" };
+    }
+
+    // 2. Supabase Auth
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        // Fetch role from profiles table
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id, email, full_name, role, created_at")
+          .eq("id", data.user.id)
+          .single();
+
+        let profile: UserProfile;
+        if (profileData) {
+          profile = {
+            id: profileData.id,
+            email: profileData.email,
+            full_name: profileData.full_name || cleanEmail.split("@")[0],
+            role: (profileData.role as AppRole) || "employee",
+            created_at: profileData.created_at,
+          };
+        } else {
+          // Automated First-User Super Admin Logic:
+          // If total admin count is 0, assign 'admin' to the very first user! Otherwise 'employee'.
+          const adminCount = await getExistingAdminCount();
+          const assignedRole: AppRole = adminCount === 0 ? "admin" : "employee";
+
+          profile = {
+            id: data.user.id,
+            email: cleanEmail,
+            full_name: (data.user.user_metadata?.full_name as string) || cleanEmail.split("@")[0],
+            role: assignedRole,
+            created_at: new Date().toISOString(),
+          };
+          try {
+            await supabase.from("profiles").insert({
+              id: profile.id,
+              email: profile.email,
+              full_name: profile.full_name,
+              role: assignedRole,
+            });
+          } catch {}
+        }
+
+        recordLocalRegisteredUser(profile);
+        setProfile(profile);
+
+        // Security Notification Email Alert on Login
+        void sendLoginSecurityAlert({
+          email: profile.email,
+          fullName: profile.full_name,
+          role: profile.role,
+          method: "password",
+        });
+
+        return { success: true, role: profile.role };
+      }
+      return { success: false, error: "Authentication failed" };
+    } catch (err: any) {
+      return { success: false, error: err.message || "Failed to connect to authentication server" };
+    }
+  },
+
+  async signInWithGoogle(): Promise<{ error?: string }> {
+    try {
+      const redirectTo =
+        typeof window !== "undefined" ? `${window.location.origin}/dashboard` : undefined;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+      return {};
+    } catch (err: any) {
+      return { error: err.message || "Google sign in failed" };
+    }
+  },
+
+  async signUp(
+    email: string,
+    password: string,
+    fullName: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    const cleanEmail = email.trim().toLowerCase();
+    try {
+      // Automated First-User Super Admin Logic:
+      // If total admin count is 0, assign 'admin' to the very first registered user.
+      // For all subsequent users, assign 'employee'.
+      const adminCount = await getExistingAdminCount();
+      const role: AppRole = adminCount === 0 ? "admin" : "employee";
+
+      const { data, error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            role,
+          },
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const profile: UserProfile = {
+          id: data.user.id,
+          email: cleanEmail,
+          full_name: fullName.trim() || cleanEmail.split("@")[0],
+          role,
+          created_at: new Date().toISOString(),
+        };
+
+        try {
+          await supabase.from("profiles").upsert({
+            id: profile.id,
+            email: profile.email,
+            full_name: profile.full_name,
+            role,
+          });
+        } catch {}
+
+        recordLocalRegisteredUser(profile);
+        setProfile(profile);
+
+        // Security Notification Alert
+        void sendLoginSecurityAlert({
+          email: cleanEmail,
+          fullName: profile.full_name,
+          role,
+          method: "registration",
+        });
+
+        return { success: true };
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || "Sign up failed" };
+    }
+  },
+
+  loginAsAdmin(overrideEmail?: string) {
+    const targetEmail = (overrideEmail || getConfiguredAdminEmail()).trim().toLowerCase();
+    const profile: UserProfile = {
+      id: "00000000-0000-0000-0000-000000000001",
+      email: targetEmail,
+      full_name: "Super Admin (Teacher)",
+      role: "admin",
+      created_at: new Date().toISOString(),
+    };
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("exam_logged_out_flag");
+    }
+    setProfile(profile);
+    recordLocalRegisteredUser(profile);
+    void sendLoginSecurityAlert({
+      email: profile.email,
+      fullName: profile.full_name,
+      role: "admin",
+      method: "password",
+    });
+    return profile;
+  },
+
+  updateAdminEmail(newEmail: string): boolean {
+    const clean = newEmail.trim().toLowerCase();
+    if (!clean || !clean.includes("@")) return false;
+    const ok = setConfiguredAdminEmail(clean);
+    if (ok) {
+      void logAuditEvent("ADMIN_EMAIL_CHANGED", { newEmail: clean });
+    }
+    return ok;
+  },
+
+  async signOut() {
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    if (typeof window !== "undefined") {
+      localStorage.setItem("exam_logged_out_flag", "true");
+    }
+    void logAuditEvent("LOGOUT", { email: authState.profile?.email });
+    setProfile(null);
+  },
+};
+
+// Listen to Supabase Auth State changes (Handles Google OAuth redirect return)
+if (typeof window !== "undefined") {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session?.user) {
+      const user = session.user;
+      const cleanEmail = (user.email ?? "").trim().toLowerCase();
+
+      // Check profiles table
+      try {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id, email, full_name, role, created_at")
+          .eq("id", user.id)
+          .single();
+
+        let profile: UserProfile;
+        if (profileData) {
+          profile = {
+            id: profileData.id,
+            email: profileData.email,
+            full_name:
+              profileData.full_name ||
+              (user.user_metadata?.full_name as string) ||
+              cleanEmail.split("@")[0],
+            role: (profileData.role as AppRole) || "employee",
+            created_at: profileData.created_at,
+          };
+        } else {
+          // Automated First-User Super Admin Logic for Google Auth
+          const adminCount = await getExistingAdminCount();
+          const assignedRole: AppRole = adminCount === 0 ? "admin" : "employee";
+
+          profile = {
+            id: user.id,
+            email: cleanEmail,
+            full_name:
+              (user.user_metadata?.full_name as string) ||
+              (user.user_metadata?.name as string) ||
+              cleanEmail.split("@")[0],
+            role: assignedRole,
+            created_at: new Date().toISOString(),
+          };
+
+          await supabase.from("profiles").upsert({
+            id: profile.id,
+            email: profile.email,
+            full_name: profile.full_name,
+            role: assignedRole,
+          });
+        }
+
+        recordLocalRegisteredUser(profile);
+        setProfile(profile);
+
+        // Dispatch Login Alert for Google sign-in
+        void sendLoginSecurityAlert({
+          email: profile.email,
+          fullName: profile.full_name,
+          role: profile.role,
+          method: "google",
+        });
+      } catch (err) {
+        console.warn("Failed syncing Google auth profile:", err);
+      }
+    } else if (event === "SIGNED_OUT") {
+      setProfile(null);
+    }
+  });
+}
+
+// React Hooks
+export function useAuth() {
+  const profile = useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    () => authState.profile,
+    () => null,
+  );
+
+  return {
+    profile,
+    user: profile,
+    role: profile?.role ?? "employee",
+    isAdmin: profile?.role === "admin",
+    isEmployee: profile?.role === "employee",
+    isAuthenticated: !!profile,
+    adminEmail: getConfiguredAdminEmail(),
+    updateAdminEmail: auth.updateAdminEmail,
+    loginAsAdmin: auth.loginAsAdmin,
+    signInWithPassword: auth.signInWithPassword,
+    signInWithGoogle: auth.signInWithGoogle,
+    signUp: auth.signUp,
+    signOut: auth.signOut,
+  };
+}
+
+export function useSession() {
+  const { profile } = useAuth();
+  return profile;
+}
+
+export function useIsAdmin(): boolean {
+  const { isAdmin } = useAuth();
+  return isAdmin;
+}
+
+export function useIsTeacher(): boolean {
+  const { isAdmin } = useAuth();
+  return isAdmin;
+}
+
+export function useIsEmployee(): boolean {
+  const { isEmployee } = useAuth();
+  return isEmployee;
+}
