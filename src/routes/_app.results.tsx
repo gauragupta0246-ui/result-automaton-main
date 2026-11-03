@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useRef } from "react";
-import { Trophy, Download, FileText, Medal, Presentation, Upload, FileSpreadsheet, Trash2 } from "lucide-react";
+import { Trophy, Download, FileText, Medal, Presentation, Upload, FileSpreadsheet, Trash2, Printer } from "lucide-react";
+import { RgpvMarksEntryReportModal } from "@/components/rgpv-marks-entry-report-modal";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -467,68 +468,75 @@ function ResultsPage() {
       </header>
 
       {classTopper && (
-        <Card className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground border-0">
-          <CardContent className="p-6 flex items-center gap-5">
-            <div className="size-16 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center">
-              <Trophy className="size-8" />
+        <Card className="border-2 border-[#b91c1c] bg-[#003366] text-white rounded-[2px] shadow-sm overflow-hidden">
+          <CardContent className="p-5 flex flex-col sm:flex-row items-center gap-5">
+            <div className="size-16 rounded-[2px] bg-white/10 border-2 border-amber-400 flex items-center justify-center shrink-0">
+              <Trophy className="size-8 text-amber-300" />
             </div>
-            <div className="flex-1">
-              <div className="text-xs uppercase tracking-wider text-primary-foreground/70 font-semibold">Class Topper · Semester {classTopper.student.semester}</div>
-              <div className="text-2xl font-display font-bold mt-1">{classTopper.student.name}</div>
-              <div className="text-sm text-primary-foreground/80 mt-0.5">{classTopper.student.roll} · Section {classTopper.student.section} · {classTopper.student.course}</div>
+            <div className="flex-1 text-center sm:text-left">
+              <div className="text-[10px] uppercase tracking-widest text-amber-300 font-serif font-bold">
+                RAJIV GANDHI PROUDYOGIKI VISHWAVIDYALAYA — INSTITUTIONAL TOPPER · SEMESTER {classTopper.student.semester}
+              </div>
+              <div className="text-xl sm:text-2xl font-serif font-black mt-1 text-white">{classTopper.student.name}</div>
+              <div className="text-xs text-blue-100 mt-0.5 font-mono">
+                ROLL NO: {classTopper.student.roll} · SECTION {classTopper.student.section} · {classTopper.student.course}
+              </div>
             </div>
-            <div className="text-right">
-              <div className="text-4xl font-bold tabular-nums">{classTopper.pct.toFixed(1)}%</div>
-              <div className="text-sm text-primary-foreground/80">{classTopper.total}/{classTopper.maxTotal} · Grade {classTopper.grade}</div>
+            <div className="text-center sm:text-right border-t sm:border-t-0 sm:border-l border-white/20 pt-3 sm:pt-0 sm:pl-5">
+              <div className="text-3xl sm:text-4xl font-serif font-black tabular-nums text-amber-300">{classTopper.pct.toFixed(1)}%</div>
+              <div className="text-xs text-blue-100 font-bold mt-0.5">{classTopper.total} / {classTopper.maxTotal} · GRADE {classTopper.grade}</div>
+              <Badge className="bg-[#b91c1c] text-white border-0 text-[10px] font-bold rounded-[2px] mt-1">
+                RANK #1 MERIT
+              </Badge>
             </div>
           </CardContent>
         </Card>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Medal className="size-4 text-warning" /> Subject Toppers
+        <Card className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs overflow-hidden">
+          <CardHeader className="bg-[#003366] text-white py-2.5 px-4 border-b border-[#002244]">
+            <CardTitle className="text-xs sm:text-sm font-serif font-bold flex items-center gap-2 uppercase tracking-wide">
+              <Medal className="size-4 text-amber-300" /> Course-Wise Highest Merit Scorers
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="p-3 space-y-2">
             {subjectToppers.map((s) => (
-              <div key={s.subject} className="flex items-center gap-3 p-2.5 rounded-lg border bg-card">
-                <Badge variant="outline" className="font-mono">{s.subject}</Badge>
+              <div key={s.subject} className="flex items-center gap-3 p-2 rounded-[2px] border border-[#d1d5db] bg-[#f8f9fa]">
+                <Badge variant="outline" className="font-mono text-xs font-bold text-[#003366] border-[#003366]/40 rounded-[2px]">{s.subject}</Badge>
                 {s.topper ? (
                   <>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">{s.topper.student.name}</div>
-                      <div className="text-xs text-muted-foreground">{s.topper.student.roll} · Sec {s.topper.student.section}</div>
+                      <div className="font-bold text-xs text-[#111827] truncate">{s.topper.student.name}</div>
+                      <div className="text-[10px] text-slate-500 font-mono">{s.topper.student.roll} · Sec {s.topper.student.section}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold tabular-nums">{s.mark}<span className="text-muted-foreground font-normal text-xs">/{cfg.maxMarks}</span></div>
+                      <div className="font-bold tabular-nums text-xs text-[#003366]">{s.mark}<span className="text-slate-500 font-normal text-[10px]">/{cfg.maxMarks}</span></div>
                     </div>
                   </>
-                ) : <div className="text-sm text-muted-foreground">No marks yet</div>}
+                ) : <div className="text-xs text-slate-500">No marks recorded</div>}
               </div>
             ))}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Trophy className="size-4 text-warning" /> Section Toppers
+        <Card className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs overflow-hidden">
+          <CardHeader className="bg-[#003366] text-white py-2.5 px-4 border-b border-[#002244]">
+            <CardTitle className="text-xs sm:text-sm font-serif font-bold flex items-center gap-2 uppercase tracking-wide">
+              <Trophy className="size-4 text-amber-300" /> Section Rank-1 Toppers
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="p-3 space-y-2">
             {sectionToppers.map((r) => (
-              <div key={r.student.section} className="flex items-center gap-3 p-2.5 rounded-lg border bg-card">
-                <Badge className="bg-primary text-primary-foreground">{r.student.section}</Badge>
+              <div key={r.student.section} className="flex items-center gap-3 p-2 rounded-[2px] border border-[#d1d5db] bg-[#f8f9fa]">
+                <Badge className="bg-[#003366] text-white rounded-[2px] text-xs font-bold">Sec {r.student.section}</Badge>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{r.student.name}</div>
-                  <div className="text-xs text-muted-foreground">{r.student.roll}</div>
+                  <div className="font-bold text-xs text-[#111827] truncate">{r.student.name}</div>
+                  <div className="text-[10px] text-slate-500 font-mono">{r.student.roll}</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold tabular-nums">{r.pct.toFixed(1)}%</div>
-                  <div className="text-xs text-muted-foreground">{r.total}/{r.maxTotal}</div>
+                  <div className="font-bold tabular-nums text-xs text-[#003366]">{r.pct.toFixed(1)}%</div>
+                  <div className="text-[10px] text-slate-500 font-mono">{r.total}/{r.maxTotal}</div>
                 </div>
               </div>
             ))}
@@ -536,41 +544,43 @@ function ResultsPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Top 10 Merit List</CardTitle>
-          <Badge variant="secondary">{EXAM_LABELS[exam]}</Badge>
+      <Card className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs overflow-hidden">
+        <CardHeader className="bg-[#003366] text-white py-2.5 px-4 border-b border-[#002244] flex flex-row items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-serif font-bold tracking-wide uppercase">
+            Top 10 Institutional Merit Register
+          </CardTitle>
+          <Badge className="bg-[#b91c1c] text-white border-0 text-[10px] font-bold rounded-[2px]">{EXAM_LABELS[exam]}</Badge>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/60 text-xs uppercase text-muted-foreground">
+            <table className="w-full text-xs border-collapse">
+              <thead className="bg-[#f8f9fa] text-[#003366] font-bold uppercase tracking-wide border-b border-[#d1d5db]">
                 <tr>
-                  <th className="text-left px-4 py-2.5 font-semibold">Rank</th>
-                  <th className="text-left px-4 py-2.5 font-semibold">Roll</th>
-                  <th className="text-left px-4 py-2.5 font-semibold">Name</th>
-                  <th className="text-left px-4 py-2.5 font-semibold">Section</th>
-                  <th className="text-right px-4 py-2.5 font-semibold">Total</th>
-                  <th className="text-right px-4 py-2.5 font-semibold">%</th>
-                  <th className="text-center px-4 py-2.5 font-semibold">Grade</th>
-                  <th className="text-center px-4 py-2.5 font-semibold">Card</th>
+                  <th className="text-left px-3 py-2 font-bold border-r border-[#e2e8f0]">Rank</th>
+                  <th className="text-left px-3 py-2 font-bold border-r border-[#e2e8f0]">Roll</th>
+                  <th className="text-left px-3 py-2 font-bold border-r border-[#e2e8f0]">Name</th>
+                  <th className="text-left px-3 py-2 font-bold border-r border-[#e2e8f0]">Section</th>
+                  <th className="text-right px-3 py-2 font-bold border-r border-[#e2e8f0]">Total</th>
+                  <th className="text-right px-3 py-2 font-bold border-r border-[#e2e8f0]">%</th>
+                  <th className="text-center px-3 py-2 font-bold border-r border-[#e2e8f0]">Grade</th>
+                  <th className="text-center px-3 py-2 font-bold">Transcript</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#d1d5db]">
                 {top10.map((r) => (
-                  <tr key={r.student.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-flex size-7 rounded-full items-center justify-center text-xs font-bold ${r.rank === 1 ? "bg-warning text-warning-foreground" : r.rank <= 3 ? "bg-primary/15 text-primary" : "bg-muted"}`}>
+                  <tr key={r.student.id} className="odd:bg-white even:bg-[#f9fafb] hover:bg-[#e6eef5]">
+                    <td className="px-3 py-2 border-r border-[#e2e8f0]">
+                      <span className={`inline-flex size-6 rounded-[2px] items-center justify-center text-xs font-bold ${r.rank === 1 ? "bg-[#d97706] text-white" : r.rank <= 3 ? "bg-[#003366] text-white" : "bg-slate-200 text-slate-700"}`}>
                         {r.rank}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{r.student.roll}</td>
-                    <td className="px-4 py-2.5 font-medium">{r.student.name}</td>
-                    <td className="px-4 py-2.5"><Badge variant="outline" className="text-[10px]">{r.student.section}</Badge></td>
-                    <td className="px-4 py-2.5 text-right font-bold tabular-nums">{r.total}<span className="text-muted-foreground font-normal">/{r.maxTotal}</span></td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">{r.pct.toFixed(1)}%</td>
-                    <td className="px-4 py-2.5 text-center"><Badge variant="secondary">{r.grade}</Badge></td>
-                    <td className="px-4 py-2.5 text-center">
+                    <td className="px-3 py-2 font-mono text-xs font-bold text-[#003366] border-r border-[#e2e8f0]">{r.student.roll}</td>
+                    <td className="px-3 py-2 font-bold text-[#111827] border-r border-[#e2e8f0]">{r.student.name}</td>
+                    <td className="px-3 py-2 border-r border-[#e2e8f0]"><Badge variant="outline" className="text-[10px] rounded-[2px] border-[#cbd5e1]">{r.student.section}</Badge></td>
+                    <td className="px-3 py-2 text-right font-bold tabular-nums text-[#003366] border-r border-[#e2e8f0]">{r.total}<span className="text-slate-400 font-normal">/{r.maxTotal}</span></td>
+                    <td className="px-3 py-2 text-right tabular-nums font-bold border-r border-[#e2e8f0]">{r.pct.toFixed(1)}%</td>
+                    <td className="px-3 py-2 text-center border-r border-[#e2e8f0]"><Badge variant="secondary" className="rounded-[2px] text-[10px] font-bold">{r.grade}</Badge></td>
+                    <td className="px-3 py-2 text-center">
                       <ResultCardDialog result={r} exam={exam} />
                     </td>
                   </tr>
@@ -581,41 +591,45 @@ function ResultsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+      <Card className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs overflow-hidden">
+        <CardHeader className="bg-[#f8f9fa] border-b border-[#d1d5db] py-2.5 px-4 flex flex-row items-center justify-between flex-wrap gap-2">
           <div>
-            <CardTitle className="text-base">Full Merit List — {EXAM_LABELS[exam]}</CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">B.Tech 2nd Semester · {sorted.length} students · Max {cfg.maxMarks}/subject</p>
+            <CardTitle className="text-xs sm:text-sm font-serif font-bold text-[#003366] tracking-wide uppercase">
+              Full Institutional Merit Ledger — {EXAM_LABELS[exam]}
+            </CardTitle>
+            <p className="text-[11px] text-slate-500 mt-0.5">B.Tech 2nd Semester · {sorted.length} enrolled candidates · Max {cfg.maxMarks}/subject</p>
           </div>
-          <Badge variant="outline">Pass {sorted.filter(r=>r.pass).length} · Fail {sorted.filter(r=>!r.pass).length}</Badge>
+          <Badge variant="outline" className="border-[#d1d5db] text-xs font-mono rounded-[2px]">
+            Passed: {sorted.filter(r=>r.pass).length} · Failed: {sorted.filter(r=>!r.pass).length}
+          </Badge>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
-              <thead className="bg-primary text-primary-foreground sticky top-0">
+              <thead className="bg-[#003366] text-white font-serif uppercase tracking-wider sticky top-0 border-b border-[#002244]">
                 <tr>
-                  <th className="px-2 py-2 font-semibold border border-primary/30">Sr. No.</th>
-                  <th className="px-2 py-2 font-semibold border border-primary/30">ROLL NO</th>
-                  <th className="px-2 py-2 font-semibold border border-primary/30 text-left">Name</th>
+                  <th className="px-2 py-2 font-bold border-r border-[#002244]">Sr. No.</th>
+                  <th className="px-2 py-2 font-bold border-r border-[#002244]">ROLL NO</th>
+                  <th className="px-2 py-2 font-bold border-r border-[#002244] text-left">Candidate Name</th>
                   {SUBJECTS.map((s) => (
-                    <th key={s} className="px-2 py-2 font-semibold border border-primary/30">{s}</th>
+                    <th key={s} className="px-2 py-2 font-bold border-r border-[#002244]">{s}</th>
                   ))}
-                  <th className="px-2 py-2 font-semibold border border-primary/30">Total</th>
-                  <th className="px-2 py-2 font-semibold border border-primary/30">%</th>
-                  <th className="px-2 py-2 font-semibold border border-primary/30">Result</th>
-                  {isTeacher && <th className="px-2 py-2 font-semibold border border-primary/30 w-8"></th>}
+                  <th className="px-2 py-2 font-bold border-r border-[#002244]">Total</th>
+                  <th className="px-2 py-2 font-bold border-r border-[#002244]">%</th>
+                  <th className="px-2 py-2 font-bold border-r border-[#002244]">Result</th>
+                  {isTeacher && <th className="px-2 py-2 font-bold border-r border-[#002244] w-8"></th>}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#d1d5db]">
                 {sorted.map((r, rowIdx) => (
-                  <tr key={r.student.id} className="hover:bg-muted/40">
-                    <td className="px-2 py-1.5 border text-center font-mono">
+                  <tr key={r.student.id} className="odd:bg-white even:bg-[#f9fafb] hover:bg-[#e6eef5]">
+                    <td className="px-2 py-1.5 border-r border-[#e2e8f0] text-center font-mono">
                       {isTeacher ? (
                         <InlineText value={r.student.roll} onCommit={(v) => examStore.updateStudent(r.student.id, { roll: v })} className="w-20 text-center" />
                       ) : r.student.roll}
                     </td>
-                    <td className="px-2 py-1.5 border text-center font-mono text-[10px]">{r.student.enrollment}</td>
-                    <td className="px-2 py-1.5 border font-medium">
+                    <td className="px-2 py-1.5 border-r border-[#e2e8f0] text-center font-mono text-[10px] text-[#003366] font-bold">{r.student.enrollment}</td>
+                    <td className="px-2 py-1.5 border-r border-[#e2e8f0] font-bold text-[#111827]">
                       {isTeacher ? (
                         <InlineText value={r.student.name} onCommit={(v) => examStore.updateStudent(r.student.id, { name: v })} className="w-full" />
                       ) : r.student.name}
@@ -635,10 +649,10 @@ function ResultsPage() {
                         colIndex={colIdx}
                       />
                     ))}
-                    <td className="px-2 py-1.5 border text-center font-bold tabular-nums">{r.total}</td>
-                    <td className="px-2 py-1.5 border text-center tabular-nums">{r.pct.toFixed(0)}</td>
-                    <td className={`px-2 py-1.5 border text-center font-semibold ${r.pass ? "text-success" : "text-destructive"}`}>
-                      {r.pass ? "Pass" : "Fail"}
+                    <td className="px-2 py-1.5 border-r border-[#e2e8f0] text-center font-bold tabular-nums text-[#003366]">{r.total}</td>
+                    <td className="px-2 py-1.5 border-r border-[#e2e8f0] text-center tabular-nums font-semibold">{r.pct.toFixed(0)}%</td>
+                    <td className={`px-2 py-1.5 border-r border-[#e2e8f0] text-center font-bold ${r.pass ? "text-[#15803d]" : "text-[#b91c1c]"}`}>
+                      {r.pass ? "PASS" : "FAIL"}
                     </td>
                     {isTeacher && (
                       <td className="px-1 py-1.5 border text-center">
@@ -670,6 +684,7 @@ function ResultsPage() {
 
 function ResultCardDialog({ result, exam }: { result: StudentResult; exam: ExamType }) {
   const cfg = useExamStore((s) => s.config[exam]);
+  const [showPrintReportModal, setShowPrintReportModal] = useState(false);
 
   const downloadPdf = () => {
     const doc = new jsPDF();
@@ -794,9 +809,30 @@ function ResultCardDialog({ result, exam }: { result: StudentResult; exam: ExamT
             <Stat label="Rank" value={`#${result.rank}`} />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" onClick={downloadPdf}><Download className="size-4 mr-2" /> Download PDF</Button>
-            <Button onClick={downloadExcel}><FileSpreadsheet className="size-4 mr-2" /> Download Excel</Button>
+            <Button
+              className="bg-[#003366] hover:bg-[#002244] text-white font-semibold gap-1.5"
+              onClick={() => setShowPrintReportModal(true)}
+            >
+              <Printer className="size-4 mr-1.5" /> Print Result
+            </Button>
+            <Button
+              className="bg-[#990000] hover:bg-[#7f1d1d] text-white font-semibold gap-1.5"
+              onClick={() => setShowPrintReportModal(true)}
+            >
+              <Download className="size-4 mr-1.5" /> Download Marksheet
+            </Button>
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={downloadPdf}><Download className="size-4 mr-2" /> Download PDF</Button>
+            <Button variant="outline" onClick={downloadExcel}><FileSpreadsheet className="size-4 mr-2" /> Download Excel</Button>
+          </div>
+
+          <RgpvMarksEntryReportModal
+            isOpen={showPrintReportModal}
+            onClose={() => setShowPrintReportModal(false)}
+            result={result}
+            exam={exam}
+          />
 
         </div>
       </DialogContent>

@@ -1,15 +1,12 @@
 import { useState, useMemo } from "react";
 import {
   Send,
-  ShieldAlert,
-  ShieldCheck,
   Clock,
   BookOpen,
   CheckCircle2,
-  AlertCircle,
   XCircle,
-  Sparkles,
   ArrowRight,
+  ShieldCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,8 +47,8 @@ export function SubjectClaimPanel({
     requestClaim,
   } = useSubjectClaims();
 
-  const userEmail = profile?.email ?? "staff@smart.edu";
-  const userId = profile?.id ?? "employee-001";
+  const userEmail = profile?.email ?? "faculty@rgpv.ac.in";
+  const userId = profile?.id ?? "faculty-001";
   const userName = profile?.full_name ?? userEmail;
 
   const [claimExam, setClaimExam] = useState<ExamType>("midsem");
@@ -104,9 +101,9 @@ export function SubjectClaimPanel({
 
       if (res.success) {
         toast.success(
-          `Subject access requested for ${claimSubject} (Section ${claimSection})!`,
+          `Subject evaluation claimed for ${claimSubject} (Section ${claimSection})!`,
           {
-            description: "Notification sent to Teacher/Admin for 1-click authorization.",
+            description: "Notification dispatched to Controller of Examinations for authorization.",
           }
         );
       } else {
@@ -118,46 +115,46 @@ export function SubjectClaimPanel({
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Banner */}
-      <Card className="border-sky-500/30 bg-gradient-to-r from-sky-950/40 via-indigo-950/30 to-slate-900 shadow-md">
-        <CardHeader className="pb-3">
+    <div className="space-y-6 max-w-4xl mx-auto font-sans">
+      {/* Official Institutional Banner */}
+      <Card className="border border-[#d1d5db] bg-white shadow-xs rounded-[2px] overflow-hidden">
+        <CardHeader className="bg-[#003366] text-white py-3 px-5 border-b border-[#002244]">
           <div className="flex items-center gap-3">
-            <div className="size-11 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shadow-xs">
-              <BookOpen className="size-6" />
+            <div className="size-9 rounded-[2px] bg-white/10 border border-white/20 text-amber-300 flex items-center justify-center shrink-0">
+              <ShieldCheck className="size-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-xl font-bold text-white">
-                  Claim My Assigned Subjects
+              <div className="flex items-center gap-2 flex-wrap">
+                <CardTitle className="text-sm sm:text-base font-serif font-bold text-white tracking-wide uppercase">
+                  Faculty Valuation &amp; Subject Claim Register
                 </CardTitle>
-                <Badge className="bg-sky-500/20 text-sky-300 border-sky-500/40 text-xs">
-                  Automated Staff Workflow
+                <Badge className="bg-[#b91c1c] text-white border-0 text-[10px] font-bold rounded-[2px]">
+                  RGPV Evaluation Cell
                 </Badge>
               </div>
-              <CardDescription className="text-xs text-slate-300 mt-1">
-                Select the classes and subjects you have been assigned to evaluate. Once approved by the Teacher (Admin), your marks entry grid unlocks automatically.
+              <CardDescription className="text-xs text-blue-100 mt-0.5">
+                Select your assigned course and section. Upon Controller approval, your marks entry register unlocks automatically.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="p-5">
           {/* Claim Form */}
           <form
             onSubmit={handleRequest}
-            className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4"
+            className="p-4 rounded-[2px] bg-[#f8f9fa] border border-[#d1d5db] space-y-4"
           >
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* 1. Exam Type */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">1. Exam Type</label>
+                <label className="text-xs font-bold text-[#003366] uppercase">1. Examination Type</label>
                 <Tabs value={claimExam} onValueChange={(v) => setClaimExam(v as ExamType)}>
-                  <TabsList className="w-full grid grid-cols-2 bg-slate-800 h-9">
-                    <TabsTrigger value="midsem" className="text-xs font-medium cursor-pointer">
+                  <TabsList className="w-full grid grid-cols-2 bg-slate-200 h-9 p-0.5 rounded-[2px]">
+                    <TabsTrigger value="midsem" className="text-xs font-bold cursor-pointer rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white">
                       Mid Sem
                     </TabsTrigger>
-                    <TabsTrigger value="put" className="text-xs font-medium cursor-pointer">
+                    <TabsTrigger value="put" className="text-xs font-bold cursor-pointer rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white">
                       PUT
                     </TabsTrigger>
                   </TabsList>
@@ -166,12 +163,12 @@ export function SubjectClaimPanel({
 
               {/* 2. Section */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">2. Section</label>
+                <label className="text-xs font-bold text-[#003366] uppercase">2. Class Section</label>
                 <Select value={claimSection} onValueChange={(v) => setClaimSection(v as Section)}>
-                  <SelectTrigger className="w-full h-9 text-xs bg-slate-800 border-slate-700 text-white cursor-pointer">
+                  <SelectTrigger className="w-full h-9 text-xs bg-white border-[#d1d5db] text-[#111827] cursor-pointer rounded-[2px] font-medium">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700 text-white max-h-56">
+                  <SelectContent className="bg-white border-[#d1d5db] text-[#111827] max-h-56">
                     {SECTIONS.map((s) => (
                       <SelectItem key={s} value={s} className="cursor-pointer text-xs">
                         Section {s}
@@ -183,15 +180,15 @@ export function SubjectClaimPanel({
 
               {/* 3. Subject */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">3. Subject</label>
+                <label className="text-xs font-bold text-[#003366] uppercase">3. Subject Code &amp; Title</label>
                 <Select value={claimSubject} onValueChange={(v) => setClaimSubject(v as Subject)}>
-                  <SelectTrigger className="w-full h-9 text-xs bg-slate-800 border-slate-700 text-white cursor-pointer">
+                  <SelectTrigger className="w-full h-9 text-xs bg-white border-[#d1d5db] text-[#111827] cursor-pointer rounded-[2px] font-medium">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                  <SelectContent className="bg-white border-[#d1d5db] text-[#111827]">
                     {SUBJECTS.map((s) => (
                       <SelectItem key={s} value={s} className="cursor-pointer text-xs">
-                        <span className="font-semibold">{s}</span> — {SUBJECT_NAMES[s]}
+                        <span className="font-bold text-[#003366]">{s}</span> — {SUBJECT_NAMES[s]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -200,31 +197,31 @@ export function SubjectClaimPanel({
             </div>
 
             {/* Availability / Conflict Status Feedback */}
-            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800">
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-[#d1d5db]">
               <div className="flex items-center gap-2 text-xs">
                 {isAssignedToOther ? (
-                  <div className="flex items-center gap-1.5 text-rose-400 font-medium">
+                  <div className="flex items-center gap-1.5 text-[#b91c1c] font-bold">
                     <XCircle className="size-4 shrink-0" />
                     <span>
-                      Already Assigned to{" "}
-                      <span className="font-semibold text-white">
+                      Already Allocated to:{" "}
+                      <span className="underline">
                         {assignmentInfo.assignedClaim?.staffName}
                       </span>{" "}
                       ({assignmentInfo.assignedClaim?.staffEmail})
                     </span>
                   </div>
                 ) : isAlreadyApprovedForMe ? (
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <div className="flex items-center gap-1.5 text-[#15803d] font-bold">
                     <CheckCircle2 className="size-4 shrink-0" />
-                    <span>You are already authorized for this subject!</span>
+                    <span>You are authorized for this course section!</span>
                   </div>
                 ) : isPendingForMe ? (
-                  <div className="flex items-center gap-1.5 text-amber-400 font-medium">
+                  <div className="flex items-center gap-1.5 text-[#b45309] font-bold">
                     <Clock className="size-4 shrink-0" />
-                    <span>Request Pending — awaiting Teacher (Admin) approval</span>
+                    <span>Awaiting Controller of Examinations verification</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <div className="flex items-center gap-1.5 text-[#15803d] font-bold">
                     <CheckCircle2 className="size-4 shrink-0" />
                     <span>Available to claim for Section {claimSection}</span>
                   </div>
@@ -234,10 +231,10 @@ export function SubjectClaimPanel({
               <Button
                 type="submit"
                 disabled={!canSubmit}
-                className={`h-9 px-5 text-xs font-bold gap-1.5 transition cursor-pointer ${
+                className={`h-9 px-5 text-xs font-bold gap-1.5 transition cursor-pointer rounded-[2px] ${
                   canSubmit
-                    ? "bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/20"
-                    : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                    ? "bg-[#003366] hover:bg-[#002244] text-white shadow-xs"
+                    : "bg-slate-200 text-slate-500 cursor-not-allowed border border-[#d1d5db]"
                 }`}
               >
                 <Send className="size-3.5" />
@@ -249,8 +246,8 @@ export function SubjectClaimPanel({
                     : isAlreadyApprovedForMe
                     ? "Already Authorized"
                     : isAssignedToOther
-                    ? "Already Assigned"
-                    : "Request Subject Access"}
+                    ? "Course Unavailable"
+                    : "Submit Subject Claim"}
                 </span>
               </Button>
             </div>
@@ -261,22 +258,22 @@ export function SubjectClaimPanel({
       {/* User's Claimed Subjects & Active Status */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <span>My Subject Access Status</span>
-            <Badge variant="outline" className="text-xs">
-              {userClaims.length} Total Requested
+          <h3 className="text-xs font-serif font-bold text-[#003366] uppercase tracking-wide flex items-center gap-2">
+            <span>My Evaluation Authorizations</span>
+            <Badge variant="outline" className="text-xs font-mono rounded-[2px] border-[#d1d5db]">
+              {userClaims.length} Total Registered
             </Badge>
           </h3>
           {approvedClaims.length > 0 && (
-            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-xs">
+            <Badge className="bg-[#15803d]/10 text-[#15803d] border border-[#15803d]/30 text-xs font-bold rounded-[2px]">
               {approvedClaims.length} Active Authorizations
             </Badge>
           )}
         </div>
 
         {userClaims.length === 0 ? (
-          <Card className="p-6 text-center text-xs text-muted-foreground border-dashed">
-            No subject access requests submitted yet. Use the form above to claim your class section and subject.
+          <Card className="p-6 text-center text-xs text-slate-500 border border-[#d1d5db] bg-white rounded-[2px]">
+            No evaluation claims recorded. Use the form above to register your section and subject.
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -288,28 +285,28 @@ export function SubjectClaimPanel({
               return (
                 <Card
                   key={claim.id}
-                  className={`p-4 border transition-all ${
+                  className={`p-3.5 border rounded-[2px] transition-all bg-white ${
                     isApproved
-                      ? "border-emerald-500/40 bg-emerald-50/10 dark:bg-emerald-950/20 shadow-xs"
+                      ? "border-[#15803d]/50 shadow-xs"
                       : isPending
-                      ? "border-amber-500/40 bg-amber-50/10 dark:bg-amber-950/20"
-                      : "border-rose-500/40 bg-rose-50/10 dark:bg-rose-950/20 opacity-80"
+                      ? "border-[#b45309]/40 bg-amber-50/20"
+                      : "border-[#b91c1c]/40 bg-rose-50/20 opacity-80"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
-                        <BookOpen className="size-4 text-primary" />
+                      <div className="flex items-center gap-1.5 font-bold text-sm text-[#003366]">
+                        <BookOpen className="size-4 text-[#003366]" />
                         <span>{claim.subject}</span>
-                        <span className="text-xs font-normal text-muted-foreground truncate max-w-[160px]">
+                        <span className="text-xs font-normal text-slate-600 truncate max-w-[160px]">
                           {SUBJECT_NAMES[claim.subject]}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="text-[11px] font-mono font-semibold">
+                        <Badge variant="outline" className="text-[10px] font-mono font-bold text-[#003366] border-[#003366]/40 rounded-[2px]">
                           Section {claim.section}
                         </Badge>
-                        <Badge variant="outline" className="text-[11px]">
+                        <Badge variant="outline" className="text-[10px] font-bold text-[#b91c1c] border-[#b91c1c]/40 rounded-[2px]">
                           {EXAM_LABELS[claim.examType]}
                         </Badge>
                       </div>
@@ -318,19 +315,19 @@ export function SubjectClaimPanel({
                     {/* Status Badge */}
                     <div>
                       {isApproved && (
-                        <Badge className="bg-emerald-600 text-white gap-1 text-[11px]">
+                        <Badge className="bg-[#15803d] text-white gap-1 text-[10px] font-bold rounded-[2px]">
                           <CheckCircle2 className="size-3" />
                           <span>Authorized</span>
                         </Badge>
                       )}
                       {isPending && (
-                        <Badge className="bg-amber-600/90 text-white gap-1 text-[11px]">
+                        <Badge className="bg-[#b45309] text-white gap-1 text-[10px] font-bold rounded-[2px]">
                           <Clock className="size-3" />
                           <span>Pending Admin</span>
                         </Badge>
                       )}
                       {isRejected && (
-                        <Badge className="bg-rose-600 text-white gap-1 text-[11px]">
+                        <Badge className="bg-[#b91c1c] text-white gap-1 text-[10px] font-bold rounded-[2px]">
                           <XCircle className="size-3" />
                           <span>Rejected</span>
                         </Badge>
@@ -340,16 +337,16 @@ export function SubjectClaimPanel({
 
                   {/* If Approved, Quick Enter button */}
                   {isApproved && onSelectApproved && (
-                    <div className="mt-3 pt-2.5 border-t border-emerald-500/20 flex items-center justify-between">
-                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                        ✓ Marks Entry Unlocked
+                    <div className="mt-3 pt-2.5 border-t border-[#e2e8f0] flex items-center justify-between">
+                      <span className="text-[11px] text-[#15803d] font-bold">
+                        ✓ Evaluation Ledger Unlocked
                       </span>
                       <Button
                         size="sm"
                         onClick={() =>
                           onSelectApproved(claim.examType, claim.section, claim.subject)
                         }
-                        className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 font-semibold cursor-pointer"
+                        className="h-7 text-xs bg-[#003366] hover:bg-[#002244] text-white gap-1 font-bold cursor-pointer rounded-[2px]"
                       >
                         <span>Open Marks Entry</span>
                         <ArrowRight className="size-3" />

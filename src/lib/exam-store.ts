@@ -11,30 +11,56 @@ export const EXAM_FULL: Record<ExamType, string> = {
   put: "Pre University Test (PUT)",
 };
 
-export const SUBJECTS = ["BT205", "BT203", "BT204", "BT102", "BT201"] as const;
+export const SUBJECTS = [
+  "BT-101",
+  "BT-102",
+  "BT-103",
+  "BT-104",
+  "BT-105",
+  "BT-201",
+  "BT-202",
+  "BT-203",
+  "BT-204",
+  "BT-205",
+] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
 export const SUBJECT_NAMES: Record<Subject, string> = {
-  BT205: "Basic Computer Engineering",
-  BT203: "Basic Mechanical Engineering",
-  BT204: "Basic Civil Engineering",
-  BT102: "Engineering Mathematics-II",
-  BT201: "Engineering Chemistry",
+  "BT-101": "Engineering Chemistry",
+  "BT-102": "Mathematics-I",
+  "BT-103": "English for Communication",
+  "BT-104": "Basic Electrical & Electronics Engineering",
+  "BT-105": "Engineering Graphics",
+  "BT-201": "Engineering Physics",
+  "BT-202": "Mathematics-II",
+  "BT-203": "Basic Mechanical Engineering",
+  "BT-204": "Basic Civil Engineering & Mechanics",
+  "BT-205": "Basic Computer Engineering",
 };
 
 // Subject aliases so any incoming sheet (legacy or new) maps to standard active subjects
 export const SUBJECT_CODE_MAP: Record<string, Subject> = {
-  BT205: "BT205",
-  BT203: "BT203",
-  BT204: "BT204",
-  BT102: "BT102",
-  BT201: "BT201",
-  // Legacy aliases
-  BT104: "BT205",
-  BT202: "BT203",
-  BT103: "BT204",
-  BT101: "BT102",
-  BT105: "BT201",
+  "BT-101": "BT-101",
+  "BT-102": "BT-102",
+  "BT-103": "BT-103",
+  "BT-104": "BT-104",
+  "BT-105": "BT-105",
+  "BT-201": "BT-201",
+  "BT-202": "BT-202",
+  "BT-203": "BT-203",
+  "BT-204": "BT-204",
+  "BT-205": "BT-205",
+  // Unhyphenated variants
+  BT101: "BT-101",
+  BT102: "BT-102",
+  BT103: "BT-103",
+  BT104: "BT-104",
+  BT105: "BT-105",
+  BT201: "BT-201",
+  BT202: "BT-202",
+  BT203: "BT-203",
+  BT204: "BT-204",
+  BT205: "BT-205",
 };
 
 export const SECTIONS = [
@@ -82,7 +108,7 @@ interface State {
   audit: AuditEntry[];
 }
 
-const KEY = "exam-store-v6";
+const KEY = "exam-store-v7";
 
 const FIRST = [
   "Aarav","Saurav","Gaurav","Sanskriti","Aashi","Vivaan","Aditya","Vihaan","Arjun","Sai",
@@ -192,7 +218,7 @@ export function migrate(raw: State): State {
 
 function load(): State {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) || localStorage.getItem("exam-store-v6");
     if (raw) return migrate(JSON.parse(raw) as State);
   } catch {}
   const s = seed();

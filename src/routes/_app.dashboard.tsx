@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   Users,
@@ -13,6 +13,12 @@ import {
   BarChart3,
   CheckCircle2,
   XCircle,
+  Bell,
+  Clock,
+  FileCheck,
+  ChevronRight,
+  ShieldCheck,
+  Building2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,16 +44,16 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import {
+  RgpvQuickAccessTiles,
+  RgpvNoticeBoard,
+} from "@/components/rgpv-portal-layout";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Smart Exam System" },
-      { name: "description", content: "Review Mid Sem and PUT performance, class averages, and student leaders." },
-      { property: "og:title", content: "Dashboard — Smart Exam System" },
-      { property: "og:description", content: "Review Mid Sem and PUT performance, class averages, and student leaders." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { title: "Academic Performance Dashboard — Rajiv Gandhi Proudyogiki Vishwavidyalaya (RGPV)" },
+      { name: "description", content: "Official RGPV Examination & Evaluation Analytics Portal." },
     ],
   }),
   component: Dashboard,
@@ -59,13 +65,12 @@ function Dashboard() {
   const state = useExamStore((s) => s);
   const [exam, setExam] = useState<ExamType>("midsem");
 
-  // Recompute results strictly based on the chosen exam
+  // Recompute results strictly based on chosen exam
   const results = useMemo(() => computeResults(state, exam), [state, exam]);
   const cfg = state.config[exam];
 
   const totalStudents = state.students.length;
   const sections = new Set(state.students.map((s) => s.section)).size;
-  const courses = new Set(state.students.map((s) => s.course)).size;
 
   const assessedResults = results.filter((r) =>
     Object.values(r.marks).some((mark) => typeof mark === "number" || mark === "A"),
@@ -107,77 +112,90 @@ function Dashboard() {
 
   const isMidSem = exam === "midsem";
 
-  // Distinct Color Schemes for Mid Sem vs. PUT
+  // Official RGPV Colors
   const theme = isMidSem
     ? {
-        accentColor: "#4f46e5",
-        accentGradient: "from-blue-600 via-indigo-600 to-indigo-700",
-        barColor: "#4f46e5",
-        sectionBarColor: "#06b6d4",
-        badgeBg: "bg-indigo-600 text-white border-indigo-400",
-        bannerBorder: "border-indigo-500/40",
-        bannerBg:
-          "bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-blue-900/10 dark:from-indigo-950/40",
-        title: "Viewing: Mid Semester Assessment",
-        subtitle: `Evaluated out of ${cfg.maxMarks} marks per subject · Pass criterion: ≥ ${cfg.passPct}%`,
-        indicator: "Blue & Indigo Theme (Internal College Mid Term)",
+        accentColor: "#003366",
+        barColor: "#003366",
+        badgeBg: "bg-[#003366] text-white border-[#002244]",
+        bannerBorder: "border-[#003366]",
+        bannerBg: "bg-[#e6eef5]",
+        title: "Viewing: Mid Semester Examination",
+        subtitle: `Internal assessment trial · Max ${cfg.maxMarks} marks per theory paper · Pass threshold: ≥ ${cfg.passPct}%`,
+        indicator: "Official Internal Evaluation",
       }
     : {
-        accentColor: "#059669",
-        accentGradient: "from-emerald-600 via-teal-600 to-amber-600",
-        barColor: "#059669",
-        sectionBarColor: "#d97706",
-        badgeBg: "bg-emerald-600 text-white border-emerald-400",
-        bannerBorder: "border-emerald-500/40",
-        bannerBg:
-          "bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-amber-950/10 dark:from-emerald-950/40",
+        accentColor: "#b91c1c",
+        barColor: "#b91c1c",
+        badgeBg: "bg-[#b91c1c] text-white border-[#990000]",
+        bannerBorder: "border-[#b91c1c]",
+        bannerBg: "bg-[#fef2f2]",
         title: "Viewing: Pre-University Test (PUT)",
-        subtitle: `Comprehensive pre-university final trial · Max ${cfg.maxMarks} marks · Pass threshold: ≥ ${cfg.passPct}%`,
-        indicator: "Deep Emerald & Amber Theme (Full Curriculum Mock Test)",
+        subtitle: `Comprehensive pre-university final mock trial · Max ${cfg.maxMarks} marks · Pass criterion: ≥ ${cfg.passPct}%`,
+        indicator: "Official Pre-University Test",
       };
 
   const passData = [
-    { name: "Pass", value: passed, color: isMidSem ? "#3b82f6" : "#10b981" },
-    { name: "Fail", value: failed, color: "#ef4444" },
+    { name: "Passed", value: passed, color: "#15803d" },
+    { name: "Failed / ATKT", value: failed, color: "#b91c1c" },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Top Header & High-Contrast Exam Toggle */}
-      <header className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-border/40">
+    <div className="space-y-5">
+      {/* ── 1. RGPV-Style Solid Rectangular Quick Access 4-Tile Action Grid ── */}
+      <div>
+        <div className="flex items-center justify-between pb-1 mb-1 border-b border-[#d1d5db]">
+          <span className="text-xs font-bold font-serif text-[#003366] uppercase tracking-wider">
+            RGPV Examination Cell · Quick Navigation Hub
+          </span>
+          <span className="text-[10.5px] text-slate-500 font-mono">
+            RGPV BHOPAL (M.P.)
+          </span>
+        </div>
+        <RgpvQuickAccessTiles />
+      </div>
+
+      {/* ── 2. RGPV Split Notice Board (Important Notices + Portal Links) ── */}
+      <RgpvNoticeBoard />
+
+      {/* ── 3. Examination Analytics Header & Distinct Exam Switcher ── */}
+      <header className="flex flex-wrap items-center justify-between gap-4 pt-2 pb-3 border-b border-[#d1d5db]">
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
-            Academic Performance Dashboard
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Real-time analytics, grade distributions, and student rankings calculated automatically
+          <div className="text-[10px] font-bold text-[#b91c1c] uppercase tracking-widest">
+            OFFICE OF CONTROLLER OF EXAMINATIONS
+          </div>
+          <h2 className="font-serif text-xl sm:text-2xl font-black tracking-tight text-[#003366]">
+            ACADEMIC PERFORMANCE &amp; RESULT EVALUATION DASHBOARD
+          </h2>
+          <p className="text-slate-600 text-xs mt-0.5">
+            Tabular tabulation register, subject clearance percentiles, and rank analytics
           </p>
         </div>
 
         {/* High-Contrast Distinct Exam Switcher */}
-        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900/80 border border-slate-700/80 shadow-md">
+        <div className="flex items-center gap-1 p-1 bg-white border border-[#d1d5db] rounded-[2px] shadow-xs">
           <Button
             type="button"
             size="sm"
             onClick={() => setExam("midsem")}
-            className={`h-9 px-4 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`h-8 px-3 text-xs font-bold rounded-[2px] transition cursor-pointer ${
               isMidSem
-                ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-600/30 ring-2 ring-indigo-400/50 scale-[1.02]"
-                : "bg-transparent text-slate-400 hover:text-white hover:bg-slate-800"
+                ? "bg-[#003366] text-white shadow-xs"
+                : "bg-transparent text-slate-700 hover:text-[#003366] hover:bg-slate-100"
             }`}
           >
             <Layers className="size-3.5 mr-1.5" />
-            <span>Mid Sem (Mid Term)</span>
+            <span>Mid Sem Examination</span>
           </Button>
 
           <Button
             type="button"
             size="sm"
             onClick={() => setExam("put")}
-            className={`h-9 px-4 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`h-8 px-3 text-xs font-bold rounded-[2px] transition cursor-pointer ${
               !isMidSem
-                ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400/50 scale-[1.02]"
-                : "bg-transparent text-slate-400 hover:text-white hover:bg-slate-800"
+                ? "bg-[#b91c1c] text-white shadow-xs"
+                : "bg-transparent text-slate-700 hover:text-[#b91c1c] hover:bg-slate-100"
             }`}
           >
             <Sparkles className="size-3.5 mr-1.5" />
@@ -186,195 +204,144 @@ function Dashboard() {
         </div>
       </header>
 
-      {/* 5. Prominent Active Exam Theme Banner */}
+      {/* ── 4. Prominent Active Exam Theme Banner ── */}
       <div
-        className={`rounded-2xl border p-4.5 shadow-sm backdrop-blur-md transition-all duration-300 flex flex-wrap items-center justify-between gap-4 ${theme.bannerBg} ${theme.bannerBorder}`}
+        className={`rounded-[2px] border-2 p-3.5 shadow-xs transition-all flex flex-wrap items-center justify-between gap-4 ${theme.bannerBg} ${theme.bannerBorder}`}
       >
-        <div className="flex items-center gap-3.5">
-          <div
-            className={`size-11 rounded-xl flex items-center justify-center text-white shadow-md bg-gradient-to-br ${theme.accentGradient}`}
-          >
-            <BarChart3 className="size-6" />
+        <div className="flex items-center gap-3">
+          <div className="size-9 rounded-[2px] flex items-center justify-center text-white bg-[#003366] shadow-xs shrink-0">
+            <BarChart3 className="size-5 text-amber-300" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <Badge className={`text-xs font-bold tracking-wide shadow-xs ${theme.badgeBg}`}>
+              <Badge className={`text-xs font-bold rounded-[2px] ${theme.badgeBg}`}>
                 {theme.title}
               </Badge>
-              <span className="text-[11px] text-muted-foreground font-mono hidden md:inline">
+              <span className="text-[11px] text-slate-600 font-mono hidden md:inline">
                 {theme.indicator}
               </span>
             </div>
-            <p className="text-xs text-foreground/80 mt-1">{theme.subtitle}</p>
+            <p className="text-xs text-slate-900 mt-0.5 font-medium">{theme.subtitle}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs">
-          <Badge variant="outline" className="h-7 px-2.5 bg-background/50 font-medium">
-            Max Score: {cfg.maxMarks * SUBJECTS.length} pts
+        <div className="flex items-center gap-2 text-xs">
+          <Badge variant="outline" className="h-7 px-2.5 bg-white border-[#d1d5db] text-[#003366] font-bold rounded-[2px]">
+            Total Paper Max: {cfg.maxMarks * SUBJECTS.length} pts
           </Badge>
-          <Badge variant="outline" className="h-7 px-2.5 bg-background/50 font-medium">
-            Subject Min: {((cfg.passPct / 100) * cfg.maxMarks).toFixed(1)} pts
+          <Badge variant="outline" className="h-7 px-2.5 bg-white border-[#d1d5db] text-[#003366] font-bold rounded-[2px]">
+            Min Clearance Mark: {((cfg.passPct / 100) * cfg.maxMarks).toFixed(1)} pts
           </Badge>
         </div>
       </div>
 
-      {/* 6. Summary KPI Cards with Modern Glassmorphism & Hover Micro-Interactions */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <KpiCard
+      {/* ── 5. Clean Institutional Summary Metric Tiles ── */}
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <MetricTile
           icon={Users}
-          label="Total Students"
+          label="Total Registered"
           value={totalStudents}
-          sub={`Across ${sections} registered sections`}
-          gradient="from-sky-500/20 to-blue-600/10 text-sky-600 dark:text-sky-400"
+          sub={`Across ${sections} registered cohorts`}
         />
-        <KpiCard
-          icon={BookOpen}
-          label="Active Subjects"
-          value={SUBJECTS.length}
-          sub={`Max ${cfg.maxMarks} marks each`}
-          gradient="from-indigo-500/20 to-purple-600/10 text-indigo-600 dark:text-indigo-400"
+        <MetricTile
+          icon={Activity}
+          label="Clearance / Pass Rate"
+          value={`${passPct.toFixed(1)}%`}
+          sub={`${passed} Passed · ${failed} ATKT / Fail`}
         />
-        <KpiCard
+        <MetricTile
           icon={TrendingUp}
-          label="Average Score"
+          label="Class Average"
           value={`${avgPct.toFixed(1)}%`}
           sub={assessmentSub}
-          gradient="from-blue-500/20 to-cyan-600/10 text-blue-600 dark:text-blue-400"
         />
-        <KpiCard
-          icon={Activity}
-          label="Passing Rate"
-          value={`${passPct.toFixed(1)}%`}
-          sub={`${passed} passed · ${failed} failed`}
-          gradient="from-emerald-500/20 to-teal-600/10 text-emerald-600 dark:text-emerald-400"
-        />
-        <KpiCard
-          icon={CheckCircle2}
-          label="Passed Students"
-          value={passed}
-          sub={`${((passed / (totalStudents || 1)) * 100).toFixed(0)}% of class strength`}
-          gradient="from-teal-500/20 to-emerald-600/10 text-teal-600 dark:text-teal-400"
-        />
-        <KpiCard
-          icon={XCircle}
-          label="Failed / Backlog"
-          value={failed}
-          sub="Requires re-assessment"
-          gradient="from-rose-500/20 to-red-600/10 text-rose-600 dark:text-rose-400"
-        />
-        <KpiCard
+        <MetricTile
           icon={Award}
-          label="Batch Highest"
+          label="Batch High Score"
           value={results.length ? Math.max(...results.map((r) => r.total)) : 0}
-          sub={`Out of ${cfg.maxMarks * SUBJECTS.length} total`}
-          gradient="from-amber-500/20 to-orange-600/10 text-amber-600 dark:text-amber-400"
-        />
-        <KpiCard
-          icon={Trophy}
-          label="Batch Lowest"
-          value={results.length ? Math.min(...results.map((r) => r.total)) : 0}
-          sub={`Out of ${cfg.maxMarks * SUBJECTS.length} total`}
-          gradient="from-slate-500/20 to-slate-700/10 text-slate-600 dark:text-slate-400"
+          sub={`Out of ${cfg.maxMarks * SUBJECTS.length} pts`}
         />
       </div>
 
-      {/* Charts Grid */}
+      {/* ── 6. Subject Performance & Pass/Fail Ratio Charts ── */}
       <div className="grid gap-5 lg:grid-cols-3">
-        {/* Subject Performance Bar Chart */}
-        <Card className="lg:col-span-2 border-border/60 bg-card/70 backdrop-blur-md rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold flex items-center justify-between">
-              <span>Subject Performance ({EXAM_LABELS[exam]})</span>
-              <Badge variant="outline" className="text-xs font-normal">
-                Subject Average Marks
+        {/* Subject Average Bar Chart */}
+        <Card className="lg:col-span-2 border border-[#d1d5db] bg-white rounded-[2px] shadow-xs">
+          <CardHeader className="pb-2 border-b border-[#d1d5db] bg-[#f9fafb]">
+            <CardTitle className="text-xs font-bold text-[#003366] uppercase flex items-center justify-between">
+              <span>Subject Performance Analysis ({EXAM_LABELS[exam]})</span>
+              <Badge variant="outline" className="text-[10px] font-bold text-[#003366] border-[#d1d5db] rounded-[2px]">
+                Average Marks / {cfg.maxMarks}
               </Badge>
             </CardTitle>
-            <CardDescription className="text-xs">
-              Average student score per subject calculated from {EXAM_LABELS[exam]} entries
+            <CardDescription className="text-xs text-slate-500">
+              Department-wise student marks distribution calculated from official entries
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             {assessedResults.length === 0 ? (
-              <div className="flex h-[280px] flex-col items-center justify-center text-sm text-muted-foreground gap-2">
-                <BarChart3 className="size-8 text-muted-foreground/40" />
+              <div className="flex h-[260px] flex-col items-center justify-center text-sm text-slate-500 gap-2">
+                <BarChart3 className="size-8 text-slate-400" />
                 <p>No marks entered for {EXAM_LABELS[exam]} yet.</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={subjectAvg} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--color-border)"
-                    vertical={false}
-                    opacity={0.6}
-                  />
-                  <XAxis
-                    dataKey="subject"
-                    stroke="var(--color-muted-foreground)"
-                    fontSize={11}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    stroke="var(--color-muted-foreground)"
-                    fontSize={11}
-                    domain={[0, cfg.maxMarks]}
-                    tickLine={false}
-                  />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis dataKey="subject" stroke="#475569" fontSize={11} tickLine={false} />
+                  <YAxis dataKey="avg" stroke="#475569" fontSize={11} domain={[0, cfg.maxMarks]} tickLine={false} />
                   <Tooltip
                     contentStyle={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: 10,
-                      boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
+                      background: "#ffffff",
+                      border: "1px solid #d1d5db",
+                      borderRadius: 2,
+                      fontSize: 12,
                     }}
-                    formatter={(val: any) => [`${val} / ${cfg.maxMarks} marks`, "Average"]}
+                    formatter={(val: any) => [`${val} / ${cfg.maxMarks} marks`, "Subject Average"]}
                   />
-                  <Bar
-                    dataKey="avg"
-                    fill={theme.barColor}
-                    radius={[6, 6, 0, 0]}
-                    animationDuration={600}
-                  />
+                  <Bar dataKey="avg" fill={theme.barColor} radius={[2, 2, 0, 0]} animationDuration={600} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
-        {/* Pass vs Fail Donut Chart */}
-        <Card className="border-border/60 bg-card/70 backdrop-blur-md rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Pass vs Fail Ratio</CardTitle>
-            <CardDescription className="text-xs">Overall clearance status</CardDescription>
+        {/* Pass vs Fail Ratio */}
+        <Card className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs">
+          <CardHeader className="pb-2 border-b border-[#d1d5db] bg-[#f9fafb]">
+            <CardTitle className="text-xs font-bold text-[#003366] uppercase">
+              Pass vs ATKT Clearance Ratio
+            </CardTitle>
+            <CardDescription className="text-xs text-slate-500">Overall academic clearance status</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2">
             {assessedResults.length === 0 ? (
-              <div className="flex h-[280px] flex-col items-center justify-center text-sm text-muted-foreground gap-2">
-                <Activity className="size-8 text-muted-foreground/40" />
-                <p>No assessed results yet.</p>
+              <div className="flex h-[260px] flex-col items-center justify-center text-sm text-slate-500 gap-2">
+                <Activity className="size-8 text-slate-400" />
+                <p>No assessed student records yet.</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
                     data={passData}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius={65}
-                    outerRadius={95}
+                    innerRadius={55}
+                    outerRadius={85}
                     paddingAngle={3}
                   >
                     {passData.map((d) => (
-                      <Cell key={d.name} fill={d.color} stroke="transparent" />
+                      <Cell key={d.name} fill={d.color} stroke="#ffffff" strokeWidth={2} />
                     ))}
                   </Pie>
                   <Legend verticalAlign="bottom" height={36} />
                   <Tooltip
                     contentStyle={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: 8,
+                      background: "#ffffff",
+                      border: "1px solid #d1d5db",
+                      borderRadius: 2,
+                      fontSize: 12,
                     }}
                   />
                 </PieChart>
@@ -384,159 +351,125 @@ function Dashboard() {
         </Card>
       </div>
 
-      {/* Section Comparison & Top Performers */}
-      <div className="grid gap-5 lg:grid-cols-2">
-        {/* Section Comparison */}
-        <Card className="border-border/60 bg-card/70 backdrop-blur-md rounded-2xl shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">
-              Section Performance Comparison ({EXAM_LABELS[exam]})
-            </CardTitle>
-            <CardDescription className="text-xs">Class-wide average % by section</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {assessedResults.length === 0 ? (
-              <div className="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
-                No section results to compare yet.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={sectionData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--color-border)"
-                    vertical={false}
-                    opacity={0.6}
-                  />
-                  <XAxis
-                    dataKey="section"
-                    stroke="var(--color-muted-foreground)"
-                    fontSize={11}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    stroke="var(--color-muted-foreground)"
-                    fontSize={11}
-                    domain={[0, 100]}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: 8,
-                    }}
-                    formatter={(val: any) => [`${val}%`, "Section Avg"]}
-                  />
-                  <Bar
-                    dataKey="avg"
-                    fill={theme.sectionBarColor}
-                    radius={[6, 6, 0, 0]}
-                    animationDuration={600}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+      {/* ── 7. Strict University Tabular Layout: Top 5 Performers / Rank List ── */}
+      <div className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs overflow-hidden">
+        <div className="bg-[#003366] text-white px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 font-serif font-bold text-xs uppercase tracking-wider">
+            <Trophy className="size-4 text-amber-300" />
+            <span>Merit Rank Order — Top 5 Performers ({EXAM_LABELS[exam]})</span>
+          </div>
+          <Link
+            to="/results"
+            className="text-[11px] text-amber-300 hover:text-white font-semibold underline flex items-center gap-1"
+          >
+            <span>View Complete Broadsheet</span>
+            <ChevronRight className="size-3" />
+          </Link>
+        </div>
 
-        {/* Top 5 Performers in Selected Exam */}
-        <Card className="border-border/60 bg-card/70 backdrop-blur-md rounded-2xl shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Trophy className="size-4 text-amber-500" /> Top Performers ({EXAM_LABELS[exam]})
-              </span>
-              <Badge variant="secondary" className="text-xs">
-                {topPerformers.length} Ranked
-              </Badge>
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Highest scorers in {EXAM_LABELS[exam]}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 pt-1">
-            {topPerformers.length === 0 ? (
-              <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
-                No marked students to rank yet.
-              </div>
-            ) : (
-              topPerformers.map((r, i) => (
-                <div
-                  key={r.student.id}
-                  className="flex items-center gap-3 p-2.5 rounded-xl border border-border/50 bg-background/50 hover:bg-muted/60 transition-colors"
-                >
-                  <div
-                    className={`size-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                      i === 0
-                        ? "bg-amber-500 text-white shadow-sm"
-                        : i === 1
-                        ? "bg-slate-300 dark:bg-slate-700 text-foreground font-bold"
-                        : i === 2
-                        ? "bg-amber-700 text-white font-bold"
-                        : "bg-muted text-muted-foreground"
+        {topPerformers.length === 0 ? (
+          <div className="p-8 text-center text-xs text-slate-500">
+            No assessed student records to compile merit ranking yet. Please enter marks in valuation portal.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-[#f1f5f9] text-[#003366] font-bold border-b border-[#d1d5db] uppercase text-[10.5px]">
+                  <th className="py-2.5 px-3 border-r border-[#d1d5db] text-center w-14">Rank</th>
+                  <th className="py-2.5 px-3 border-r border-[#d1d5db]">Roll Number</th>
+                  <th className="py-2.5 px-3 border-r border-[#d1d5db]">Candidate Name</th>
+                  <th className="py-2.5 px-3 border-r border-[#d1d5db] text-center">Section</th>
+                  <th className="py-2.5 px-3 border-r border-[#d1d5db] text-right">Marks Obtained</th>
+                  <th className="py-2.5 px-3 border-r border-[#d1d5db] text-right">Percentage</th>
+                  <th className="py-2.5 px-3 border-r border-[#d1d5db] text-center">Grade</th>
+                  <th className="py-2.5 px-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e5e7eb]">
+                {topPerformers.map((r, i) => (
+                  <tr
+                    key={r.student.id}
+                    className={`hover:bg-[#e6eef5] transition-colors ${
+                      i % 2 === 1 ? "bg-[#f9fafb]" : "bg-white"
                     }`}
                   >
-                    #{i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate text-sm text-foreground">
+                    <td className="py-2.5 px-3 border-r border-[#e5e7eb] text-center font-bold font-mono">
+                      <span
+                        className={`inline-block size-6 leading-6 rounded-[2px] text-white text-[11px] ${
+                          i === 0
+                            ? "bg-[#b91c1c] font-black"
+                            : i === 1
+                            ? "bg-[#003366] font-bold"
+                            : "bg-[#475569] font-bold"
+                        }`}
+                      >
+                        #{i + 1}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 border-r border-[#e5e7eb] font-mono font-bold text-[#003366]">
+                      {r.student.roll}
+                    </td>
+                    <td className="py-2.5 px-3 border-r border-[#e5e7eb] font-medium text-slate-900">
                       {r.student.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground font-mono">
-                      {r.student.roll} · Section {r.student.section}
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="font-bold tabular-nums text-foreground">
-                      {r.total}
-                      <span className="text-muted-foreground font-normal text-xs">
+                    </td>
+                    <td className="py-2.5 px-3 border-r border-[#e5e7eb] text-center font-bold">
+                      {r.student.section}
+                    </td>
+                    <td className="py-2.5 px-3 border-r border-[#e5e7eb] text-right font-mono font-bold">
+                      {r.total}{" "}
+                      <span className="text-slate-400 font-normal text-[10px]">
                         /{r.maxTotal}
                       </span>
-                    </div>
-                    <Badge variant="secondary" className="text-[10px] mt-0.5 font-semibold">
-                      {r.pct.toFixed(1)}% · Grade {r.grade}
-                    </Badge>
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                    </td>
+                    <td className="py-2.5 px-3 border-r border-[#e5e7eb] text-right font-mono font-bold text-[#003366]">
+                      {r.pct.toFixed(1)}%
+                    </td>
+                    <td className="py-2.5 px-3 border-r border-[#e5e7eb] text-center font-bold">
+                      {r.grade}
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      <Badge className="bg-[#15803d] text-white text-[9.5px] px-2 py-0.2 rounded-[2px] font-bold">
+                        PASS
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function KpiCard({
+// ─── Clean Institutional Metric Tile Component ────────────────────────────────
+function MetricTile({
   icon: Icon,
   label,
   value,
   sub,
-  gradient,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: React.ReactNode;
   sub?: string;
-  gradient: string;
 }) {
   return (
-    <Card className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-md shadow-xs hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300">
-      <CardContent className="p-4.5 flex items-start gap-3.5">
-        <div
-          className={`size-11 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${gradient} shadow-xs`}
-        >
-          <Icon className="size-5" />
+    <div className="bg-white border border-[#d1d5db] rounded-[2px] p-3.5 shadow-xs flex items-center gap-3">
+      <div className="size-10 rounded-[2px] bg-[#003366] text-white flex items-center justify-center shrink-0">
+        <Icon className="size-5 text-amber-300" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+          {label}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
-            {label}
-          </div>
-          <div className="text-2xl font-bold tabular-nums mt-0.5 text-foreground">{value}</div>
-          {sub && <div className="text-[11px] text-muted-foreground truncate mt-0.5">{sub}</div>}
+        <div className="text-xl font-bold font-mono text-[#003366] leading-tight mt-0.5">
+          {value}
         </div>
-      </CardContent>
-    </Card>
+        {sub && <div className="text-[10.5px] text-slate-500 truncate mt-0.5">{sub}</div>}
+      </div>
+    </div>
   );
 }

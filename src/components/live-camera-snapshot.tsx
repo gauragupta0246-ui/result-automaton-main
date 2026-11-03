@@ -5,10 +5,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   Upload,
-  Sparkles,
   ShieldCheck,
   Video,
   VideoOff,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,10 +41,9 @@ export function LiveCameraSnapshot({
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Camera API is not supported on this browser or connection.");
+        throw new Error("Webcam access not supported on this device/browser.");
       }
 
-      // Stop any existing stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
@@ -72,8 +71,8 @@ export function LiveCameraSnapshot({
       setCameraActive(false);
       setCameraError(
         err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
-          ? "Camera permission denied. Please allow camera access or use the upload option below."
-          : "Could not start camera preview. Please check camera permissions or upload a snapshot."
+          ? "Camera permission denied. Please allow camera in browser address bar or use upload fallback."
+          : "Webcam initialization failed. Please allow webcam or upload a clear photo snapshot."
       );
     } finally {
       setIsInitializing(false);
@@ -92,7 +91,6 @@ export function LiveCameraSnapshot({
     setCameraActive(false);
   }, []);
 
-  // Initialize camera when component mounts or when capturedPhoto is cleared
   useEffect(() => {
     if (!capturedPhoto) {
       void startCamera();
@@ -118,7 +116,7 @@ export function LiveCameraSnapshot({
     const ctx = canvas.getContext("2d");
 
     if (ctx) {
-      // Flip horizontally to match mirror preview
+      // Mirror flip
       ctx.translate(width, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, width, height);
@@ -126,11 +124,11 @@ export function LiveCameraSnapshot({
       const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
       stopCamera();
       onCapture(dataUrl);
-      toast.success("Selfie snapshot captured successfully!");
+      toast.success("Security identity snapshot captured successfully!");
     }
   };
 
-  // Fallback: File upload / Native Mobile Camera capture
+  // Fallback upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -141,7 +139,7 @@ export function LiveCameraSnapshot({
       if (dataUrl) {
         stopCamera();
         onCapture(dataUrl);
-        toast.success("Photo snapshot uploaded successfully!");
+        toast.success("Snapshot photo uploaded successfully!");
       }
     };
     reader.readAsDataURL(file);
@@ -154,55 +152,53 @@ export function LiveCameraSnapshot({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5 font-sans">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-          <Camera className="size-4 text-sky-400" />
-          <span>Mandatory Security Snapshot Gate *</span>
+        <label className="text-xs font-bold text-[#0b2545] uppercase tracking-wider flex items-center gap-1.5">
+          <Camera className="size-4 text-[#0b2545]" />
+          <span>Security Snapshot Gate (Mandatory) *</span>
         </label>
 
         {capturedPhoto ? (
-          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[11px] gap-1 font-semibold">
-            <CheckCircle2 className="size-3" /> Photo Verified
+          <Badge className="bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] text-[11px] font-bold rounded-[2px] gap-1 shadow-xs">
+            <CheckCircle2 className="size-3 text-[#15803d]" /> Live Photo Verified
           </Badge>
         ) : cameraActive ? (
-          <Badge variant="outline" className="text-[10px] text-sky-400 border-sky-500/40 gap-1.5">
-            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <Badge variant="outline" className="text-[10px] text-[#0b2545] border-[#0b2545] bg-[#e8eef6] gap-1 font-bold rounded-[2px]">
+            <span className="size-1.5 rounded-full bg-[#15803d] animate-pulse" />
             Live Camera Active
           </Badge>
         ) : (
-          <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/40">
-            Awaiting Capture
+          <Badge variant="outline" className="text-[10px] text-[#991b1b] border-[#fecaca] bg-[#fef2f2] font-bold rounded-[2px] gap-1">
+            <Lock className="size-2.5" /> Awaiting Snapshot
           </Badge>
         )}
       </div>
 
-      {/* Camera Preview / Captured Image Frame */}
-      <div className="relative rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-950 aspect-[4/3] max-h-[280px] w-full flex items-center justify-center shadow-inner group">
+      {/* Solid Bordered Frame with Live Preview */}
+      <div className="relative rounded-[2px] overflow-hidden border-2 border-[#003366] bg-[#f8fafc] aspect-[4/3] max-h-[260px] w-full flex items-center justify-center shadow-xs">
         {capturedPhoto ? (
           // Captured Snapshot Preview
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full bg-slate-900">
             <img
               src={capturedPhoto}
-              alt="Student Snapshot"
+              alt="Student Captured Selfie"
               className="w-full h-full object-cover object-center"
             />
-            {/* Watermark / Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-3">
-              <div className="flex items-center justify-between text-xs text-white">
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="size-4 text-emerald-400" />
-                  <span className="font-semibold text-xs">Fresh Live Snapshot</span>
-                </div>
-                <span className="text-[10px] text-slate-300 font-mono">
-                  {new Date().toLocaleTimeString()}
-                </span>
+            {/* Formal University Stamp Banner */}
+            <div className="absolute inset-x-0 bottom-0 bg-[#003366]/95 text-white p-2 border-t border-[#b91c1c] flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="size-3.5 text-amber-300" />
+                <span className="font-bold text-[11px]">Audit Verified Face Snapshot</span>
               </div>
+              <span className="text-[10px] font-mono text-slate-200">
+                {new Date().toLocaleTimeString()}
+              </span>
             </div>
           </div>
         ) : cameraActive ? (
           // Live Video Preview
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full bg-black">
             <video
               ref={videoRef}
               autoPlay
@@ -210,33 +206,33 @@ export function LiveCameraSnapshot({
               muted
               className="w-full h-full object-cover scale-x-[-1]"
             />
-            {/* Face alignment reticle overlay */}
+            {/* Formal Reticle Frame */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-36 h-44 rounded-full border-2 border-dashed border-sky-400/60 flex items-center justify-center">
-                <span className="text-[10px] text-sky-300/80 font-medium bg-slate-950/60 px-2 py-0.5 rounded-full">
-                  Align Face Here
+              <div className="w-36 h-44 rounded-[2px] border-2 border-dashed border-amber-400 flex items-center justify-center shadow-sm">
+                <span className="text-[9px] uppercase tracking-wider font-bold text-white bg-[#003366] px-2 py-0.5 rounded-[2px] border border-amber-400">
+                  Align Face Inside Frame
                 </span>
               </div>
             </div>
           </div>
         ) : (
-          // Standby / Error / Offline Frame
-          <div className="p-6 text-center space-y-3 max-w-xs mx-auto">
-            <div className="size-12 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+          // Offline / Error Frame
+          <div className="p-4 text-center space-y-2.5 max-w-xs mx-auto">
+            <div className="size-11 rounded-[2px] bg-[#e6eef5] border border-[#d1d5db] text-[#003366] flex items-center justify-center mx-auto">
               {isInitializing ? (
-                <RefreshCw className="size-6 animate-spin text-sky-400" />
+                <RefreshCw className="size-5 animate-spin text-[#003366]" />
               ) : (
-                <VideoOff className="size-6 text-slate-500" />
+                <VideoOff className="size-5 text-slate-500" />
               )}
             </div>
             <div>
-              <p className="text-xs text-slate-300 font-medium">
+              <p className="text-xs text-[#111827] font-bold">
                 {isInitializing
-                  ? "Starting camera preview…"
-                  : cameraError || "Live webcam snapshot required to access results."}
+                  ? "Starting Live Camera Preview…"
+                  : cameraError || "Live webcam snapshot required to access result."}
               </p>
-              <p className="text-[10px] text-slate-500 mt-1">
-                A fresh photo is captured directly for access audit. No prior stored photo needed.
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                A fresh webcam snapshot must be captured to satisfy statutory university examination auditing rules.
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
@@ -244,7 +240,7 @@ export function LiveCameraSnapshot({
                 type="button"
                 size="sm"
                 onClick={startCamera}
-                className="h-8 text-xs bg-sky-600 hover:bg-sky-700 text-white cursor-pointer font-semibold"
+                className="h-8 text-xs bg-[#003366] hover:bg-[#002244] text-white cursor-pointer font-bold rounded-[2px]"
               >
                 <Video className="size-3.5 mr-1.5" /> Start Camera
               </Button>
@@ -253,16 +249,16 @@ export function LiveCameraSnapshot({
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-8 text-xs border-slate-700 text-slate-300 hover:text-white cursor-pointer"
+                className="h-8 text-xs border-[#d1d5db] bg-white text-slate-700 hover:text-[#003366] cursor-pointer rounded-[2px] font-semibold"
               >
-                <Upload className="size-3.5 mr-1.5" /> Upload Selfie
+                <Upload className="size-3.5 mr-1.5" /> Upload Photo
               </Button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Hidden File Input for Mobile / Fallback upload */}
+      {/* Hidden File Input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -272,17 +268,17 @@ export function LiveCameraSnapshot({
         onChange={handleFileUpload}
       />
 
-      {/* Action Controls */}
+      {/* Controls */}
       <div className="flex items-center gap-2">
         {capturedPhoto ? (
           <Button
             type="button"
             variant="outline"
             onClick={handleRetake}
-            className="w-full h-9 text-xs border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-200 cursor-pointer font-medium gap-1.5"
+            className="w-full h-9 text-xs border-[#cbd5e1] bg-white hover:bg-slate-50 text-[#0b2545] cursor-pointer font-bold rounded-[4px] gap-1.5 shadow-xs"
           >
-            <RefreshCw className="size-3.5 text-sky-400" />
-            <span>Retake Snapshot</span>
+            <RefreshCw className="size-3.5 text-[#0b2545]" />
+            <span>Retake Live Snapshot</span>
           </Button>
         ) : (
           <div className="flex items-center gap-2 w-full">
@@ -290,14 +286,14 @@ export function LiveCameraSnapshot({
               type="button"
               onClick={handleCapture}
               disabled={!cameraActive}
-              className={`flex-1 h-10 text-xs font-bold gap-2 cursor-pointer transition shadow-md ${
+              className={`flex-1 h-10 text-xs font-bold rounded-[4px] gap-2 cursor-pointer transition shadow-xs ${
                 cameraActive
-                  ? "bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white shadow-sky-600/20"
-                  : "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed"
+                  ? "bg-[#0b2545] hover:bg-[#133966] text-white"
+                  : "bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed"
               }`}
             >
               <Camera className="size-4" />
-              <span>Capture Selfie / Photo</span>
+              <span>Capture Live Face Snapshot</span>
             </Button>
 
             <Button
@@ -306,7 +302,7 @@ export function LiveCameraSnapshot({
               size="icon"
               title="Upload Photo or Mobile Camera"
               onClick={() => fileInputRef.current?.click()}
-              className="size-10 shrink-0 border-slate-700 bg-slate-900/60 text-slate-300 hover:text-white cursor-pointer"
+              className="size-10 shrink-0 border-[#cbd5e1] bg-white text-[#334155] hover:text-[#0b2545] cursor-pointer rounded-[4px]"
             >
               <Upload className="size-4" />
             </Button>
@@ -314,8 +310,8 @@ export function LiveCameraSnapshot({
         )}
       </div>
 
-      <p className="text-[11px] text-slate-400 leading-tight">
-        ℹ️ <strong>Security Notice:</strong> Result download and viewing remain locked until your live snapshot is captured. This ensures verifiable access audits.
+      <p className="text-[10px] text-[#475569] leading-tight">
+        ℹ️ <strong>Security Gate Rule:</strong> The "Verify &amp; View Result" button remains locked until a live snapshot is captured.
       </p>
     </div>
   );

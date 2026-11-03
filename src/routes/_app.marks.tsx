@@ -535,28 +535,35 @@ function MarksPage() {
 
       {/* 5. Admin Special Facility: Batch Student List Upload */}
       {isAdmin && (
-        <Card className="border-indigo-500/30 bg-gradient-to-r from-indigo-50/70 via-background to-background dark:from-indigo-950/30 shadow-sm">
-          <CardHeader className="py-3 px-5 border-b border-indigo-500/10">
+        <Card className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs overflow-hidden">
+          <CardHeader className="py-2.5 px-4 border-b border-[#002244] bg-[#003366] text-white">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Upload className="size-4 text-indigo-600 dark:text-indigo-400" />
-                <CardTitle className="text-sm font-bold">Admin Special Facility: Batch Upload Student List</CardTitle>
-                <Badge className="text-[10px] bg-indigo-600 text-white">Admin Only</Badge>
+                <Upload className="size-4 text-amber-300" />
+                <CardTitle className="text-xs sm:text-sm font-serif font-bold text-white tracking-wide uppercase">
+                  Institutional Roster Import: Batch Upload Student Register
+                </CardTitle>
+                <Badge className="text-[9px] bg-[#b91c1c] text-white border-0 font-bold rounded-[2px]">Admin Only</Badge>
               </div>
-              <Button variant="ghost" size="sm" onClick={downloadStudentTemplate} className="text-xs h-7 gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={downloadStudentTemplate}
+                className="text-xs h-7 gap-1 text-blue-100 hover:text-white hover:bg-white/10 rounded-[2px]"
+              >
                 <Download className="size-3" /> Download Sample CSV/Excel Template
               </Button>
             </div>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-[11px] text-blue-100 mt-0.5">
               Upload class roster CSV or Excel files. Students will be automatically assigned to the selected Semester, Branch, and Section.
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-5 py-3.5 flex flex-wrap items-end gap-3">
+          <CardContent className="px-4 py-3 flex flex-wrap items-end gap-3 bg-[#f8f9fa]">
             {/* Semester Selector */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-muted-foreground uppercase">Semester</label>
+              <label className="text-[10px] font-bold text-[#003366] uppercase">Semester</label>
               <Select value={String(uploadSemester)} onValueChange={(v) => setUploadSemester(Number(v))}>
-                <SelectTrigger className="w-[130px] h-9 text-xs bg-background">
+                <SelectTrigger className="w-[130px] h-8 text-xs bg-white border-[#d1d5db] rounded-[2px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -571,9 +578,9 @@ function MarksPage() {
 
             {/* Branch Selector */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-muted-foreground uppercase">Branch</label>
+              <label className="text-[10px] font-bold text-[#003366] uppercase">Branch</label>
               <Select value={uploadBranch} onValueChange={setUploadBranch}>
-                <SelectTrigger className="w-[130px] h-9 text-xs bg-background">
+                <SelectTrigger className="w-[130px] h-8 text-xs bg-white border-[#d1d5db] rounded-[2px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -588,9 +595,9 @@ function MarksPage() {
 
             {/* Section Selector */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-muted-foreground uppercase">Section</label>
+              <label className="text-[10px] font-bold text-[#003366] uppercase">Section</label>
               <Select value={uploadSection} onValueChange={(v) => setUploadSection(v as Section)}>
-                <SelectTrigger className="w-[130px] h-9 text-xs bg-background">
+                <SelectTrigger className="w-[130px] h-8 text-xs bg-white border-[#d1d5db] rounded-[2px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -619,9 +626,9 @@ function MarksPage() {
               <Button
                 type="button"
                 onClick={() => adminUploadInputRef.current?.click()}
-                className="h-9 gap-1.5 cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+                className="h-8 gap-1.5 cursor-pointer bg-[#003366] hover:bg-[#002244] text-white font-bold text-xs rounded-[2px]"
               >
-                <Upload className="size-4" /> Upload Student List (CSV/Excel)
+                <Upload className="size-3.5" /> Upload Student List (CSV/Excel)
               </Button>
             </div>
           </CardContent>
@@ -641,11 +648,11 @@ function MarksPage() {
         <>
           {/* Quick-Access Authorized Subjects Banner for Staff */}
           {isEmployee && userApprovedClaims.length > 0 && (
-            <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-50/10 dark:bg-emerald-950/20 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+            <div className="p-3 rounded-[2px] border border-[#15803d]/40 bg-[#f0fdf4] flex flex-wrap items-center justify-between gap-2.5 shadow-xs">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <CheckCircle2 className="size-4 text-emerald-500" />
-                  <span>My Authorized Subjects:</span>
+                <span className="text-xs font-bold text-[#15803d] flex items-center gap-1.5">
+                  <CheckCircle2 className="size-4 text-[#15803d]" />
+                  <span>Authorized Evaluation Courses:</span>
                 </span>
                 {userApprovedClaims.map((ac) => {
                   const isActive =
@@ -660,16 +667,16 @@ function MarksPage() {
                         setSection(ac.section);
                         setSubjectFilter(ac.subject);
                       }}
-                      className={`h-7 text-xs gap-1.5 cursor-pointer font-semibold ${
+                      className={`h-7 text-xs gap-1.5 cursor-pointer font-bold rounded-[2px] ${
                         isActive
-                          ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                          : "hover:bg-muted"
+                          ? "bg-[#003366] hover:bg-[#002244] text-white shadow-xs"
+                          : "bg-white border-[#d1d5db] text-[#003366] hover:bg-slate-50"
                       }`}
                     >
                       <span>
                         {ac.subject} ({ac.section})
                       </span>
-                      <span className="text-[10px] opacity-80 uppercase">
+                      <span className="text-[10px] opacity-80 uppercase font-mono">
                         [{EXAM_LABELS[ac.examType]}]
                       </span>
                     </Button>
@@ -681,30 +688,30 @@ function MarksPage() {
                 size="sm"
                 variant="ghost"
                 onClick={() => setShowClaimModal(true)}
-                className="h-7 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-500 hover:bg-sky-500/10 cursor-pointer font-medium"
+                className="h-7 text-xs text-[#003366] hover:text-[#002244] hover:bg-[#003366]/10 cursor-pointer font-bold rounded-[2px]"
               >
-                + Claim Another Subject
+                + Claim Another Course
               </Button>
             </div>
           )}
 
           {/* 4. Filter & Selection Bar (Strict Filter Gate: Exam Type, Section, Subject) */}
-          <Card className="border-border/60 shadow-xs">
-            <CardContent className="p-4 flex flex-wrap items-center gap-4">
+          <Card className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs">
+            <CardContent className="p-3.5 flex flex-wrap items-center gap-4">
               {/* Exam Type Selector (Mid Sem vs PUT) */}
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-[#003366] uppercase tracking-wider">
                     1. Exam Type
                   </span>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <span className="text-[10px] text-[#15803d] font-bold">
                     ✓ {EXAM_LABELS[exam]}
                   </span>
                 </div>
                 <Tabs value={exam} onValueChange={(v) => setExam(v as ExamType)}>
-                  <TabsList className="h-9">
+                  <TabsList className="h-8 bg-slate-200 p-0.5 rounded-[2px]">
                     {EXAMS.map((e) => (
-                      <TabsTrigger key={e} value={e} className="text-xs font-semibold px-3 cursor-pointer">
+                      <TabsTrigger key={e} value={e} className="text-xs font-bold px-3 h-7 rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white cursor-pointer">
                         {EXAM_LABELS[e]}
                       </TabsTrigger>
                     ))}
@@ -712,28 +719,28 @@ function MarksPage() {
                 </Tabs>
               </div>
 
-              <div className="h-8 w-px bg-border hidden md:block mt-3" />
+              <div className="h-8 w-px bg-[#d1d5db] hidden md:block mt-3" />
 
               {/* Section Selector (Mandatory, No "All" Option) */}
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-[#003366] uppercase tracking-wider">
                     2. Section
                   </span>
                   {section ? (
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <span className="text-[10px] text-[#15803d] font-bold">
                       ✓ Section {section}
                     </span>
                   ) : (
-                    <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-amber-600 border-amber-500/40">
+                    <Badge variant="outline" className="text-[10px] py-0 px-1 text-[#b91c1c] border-[#b91c1c]/40 font-bold rounded-[2px]">
                       Required
                     </Badge>
                   )}
                 </div>
                 <Select value={section} onValueChange={setSection}>
                   <SelectTrigger
-                    className={`w-[160px] h-9 text-xs bg-background cursor-pointer ${
-                      !section ? "border-amber-500/60 ring-1 ring-amber-500/30" : "border-border"
+                    className={`w-[150px] h-8 text-xs bg-white cursor-pointer rounded-[2px] font-medium ${
+                      !section ? "border-[#b91c1c] ring-1 ring-[#b91c1c]/30" : "border-[#d1d5db]"
                     }`}
                   >
                     <SelectValue placeholder="Select Section" />
@@ -955,80 +962,80 @@ function MarksPage() {
             </Card>
           ) : (
             /* Focused Student Marks Table with ONLY ONE single editable marks column */
-            <Card className="overflow-hidden shadow-sm border-border/80">
+            <Card className="overflow-hidden shadow-xs border border-[#d1d5db] bg-white rounded-[2px]">
               {/* Active Scope Summary Banner */}
-              <div className="px-5 py-3 border-b bg-sky-500/5 dark:bg-sky-950/20 flex flex-wrap items-center justify-between gap-2">
+              <div className="px-4 py-2.5 border-b border-[#d1d5db] bg-[#f8f9fa] flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs">
-                  <Badge className="bg-sky-600 text-white font-mono text-[11px]">Section {section}</Badge>
-                  <span className="text-muted-foreground">·</span>
-                  <span className="font-bold text-foreground">
+                  <Badge className="bg-[#003366] text-white font-mono text-[11px] rounded-[2px] font-bold">Section {section}</Badge>
+                  <span className="text-slate-400">·</span>
+                  <span className="font-serif font-bold text-[#003366] text-sm">
                     {subjectFilter} — {SUBJECT_NAMES[subjectFilter as Subject]}
                   </span>
-                  <span className="text-muted-foreground">·</span>
-                  <Badge variant="outline" className="text-[11px]">
+                  <span className="text-slate-400">·</span>
+                  <Badge variant="outline" className="text-[11px] border-[#d1d5db] rounded-[2px]">
                     {EXAM_LABELS[exam]} (Max: {cfg.maxMarks})
                   </Badge>
-                  <span className="text-muted-foreground">·</span>
-                  <span className="text-muted-foreground font-medium">{filtered.length} students enrolled</span>
+                  <span className="text-slate-400">·</span>
+                  <span className="text-slate-600 font-medium">{filtered.length} candidates registered</span>
                 </div>
 
                 <Button
                   onClick={handleSaveAndSubmitMarks}
                   size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 h-8 text-xs font-semibold"
+                  className="bg-[#15803d] hover:bg-[#166534] text-white gap-1.5 h-8 text-xs font-bold rounded-[2px] cursor-pointer shadow-xs"
                 >
                   <Send className="size-3.5" /> Save / Submit Marks
                 </Button>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead className="bg-muted/70 text-xs uppercase tracking-wide text-muted-foreground sticky top-0 border-b">
+                <table className="w-full text-xs border-collapse">
+                  <thead className="bg-[#003366] text-white font-serif uppercase tracking-wider sticky top-0 border-b border-[#002244]">
                     <tr>
-                      <th className="text-left px-3 py-3 font-semibold w-14">Sr.</th>
-                      <th className="text-left px-3 py-3 font-semibold min-w-[120px]">Roll No</th>
-                      <th className="text-left px-3 py-3 font-semibold min-w-[180px]">Student Name</th>
-                      <th className="text-center px-3 py-3 font-semibold w-16">Sec</th>
+                      <th className="text-left px-3 py-2.5 font-bold w-12 border-r border-[#002244]">Sr.</th>
+                      <th className="text-left px-3 py-2.5 font-bold min-w-[110px] border-r border-[#002244]">Roll No</th>
+                      <th className="text-left px-3 py-2.5 font-bold min-w-[170px] border-r border-[#002244]">Student Name</th>
+                      <th className="text-center px-3 py-2.5 font-bold w-16 border-r border-[#002244]">Sec</th>
 
                       {/* ONLY ONE EDITABLE MARKS COLUMN */}
-                      <th className="text-center px-4 py-3 font-semibold min-w-[140px] bg-sky-500/10 dark:bg-sky-950/40 border-x border-sky-500/30">
-                        <div className="font-bold text-sky-700 dark:text-sky-300 text-sm">
+                      <th className="text-center px-4 py-2.5 font-bold min-w-[140px] bg-[#b91c1c] text-white border-x-2 border-[#990000]">
+                        <div className="font-bold text-white text-xs">
                           {subjectFilter} Marks
                         </div>
-                        <div className="text-[10px] font-normal normal-case text-muted-foreground">
+                        <div className="text-[10px] font-normal normal-case text-amber-200">
                           {SUBJECT_NAMES[subjectFilter as Subject]} (Max {cfg.maxMarks})
                         </div>
                       </th>
 
-                      <th className="text-center px-3 py-3 font-semibold bg-primary/5 min-w-[70px]">Total</th>
-                      <th className="text-center px-3 py-3 font-semibold bg-primary/5 min-w-[65px]">%</th>
-                      <th className="text-center px-3 py-3 font-semibold bg-primary/5 min-w-[60px]">Grade</th>
-                      <th className="text-center px-3 py-3 font-semibold bg-primary/5 min-w-[70px]">Status</th>
-                      <th className="text-center px-3 py-3 font-semibold bg-primary/5 min-w-[75px]">Sec Rank</th>
-                      {isAdmin && <th className="text-center px-3 py-3 font-semibold w-10"></th>}
+                      <th className="text-center px-3 py-2.5 font-bold border-r border-[#002244] min-w-[65px]">Total</th>
+                      <th className="text-center px-3 py-2.5 font-bold border-r border-[#002244] min-w-[60px]">%</th>
+                      <th className="text-center px-3 py-2.5 font-bold border-r border-[#002244] min-w-[55px]">Grade</th>
+                      <th className="text-center px-3 py-2.5 font-bold border-r border-[#002244] min-w-[65px]">Status</th>
+                      <th className="text-center px-3 py-2.5 font-bold min-w-[70px]">Sec Rank</th>
+                      {isAdmin && <th className="text-center px-2 py-2.5 font-bold w-10"></th>}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-[#d1d5db]">
                     {filtered.map((r, idx) => (
-                      <tr key={r.student.id} className="hover:bg-muted/40 transition-colors">
+                      <tr key={r.student.id} className="odd:bg-white even:bg-[#f9fafb] hover:bg-[#e6eef5] transition-colors">
                         {/* Sr. No */}
-                        <td className="px-3 py-2 text-muted-foreground tabular-nums font-mono text-xs">{idx + 1}</td>
+                        <td className="px-3 py-2 text-slate-500 tabular-nums font-mono text-xs border-r border-[#e2e8f0]">{idx + 1}</td>
 
                         {/* Student Roll No (Strictly Read-Only) */}
-                        <td className="px-3 py-2 font-mono text-xs font-semibold text-foreground">
-                          <Badge variant="outline" className="font-mono text-xs">
+                        <td className="px-3 py-2 font-mono text-xs font-bold text-[#003366] border-r border-[#e2e8f0]">
+                          <Badge variant="outline" className="font-mono text-xs rounded-[2px] border-[#cbd5e1]">
                             {r.student.roll}
                           </Badge>
                         </td>
 
                         {/* Student Name: Strictly Read-Only */}
-                        <td className="px-3 py-2">
-                          <span className="font-semibold text-foreground text-sm">{r.student.name}</span>
+                        <td className="px-3 py-2 border-r border-[#e2e8f0]">
+                          <span className="font-bold text-[#111827] text-xs">{r.student.name}</span>
                         </td>
 
                         {/* Section: Strictly Read-Only */}
-                        <td className="px-2 py-2 text-center">
-                          <Badge variant="secondary" className="font-mono text-[11px]">
+                        <td className="px-2 py-2 text-center border-r border-[#e2e8f0]">
+                          <Badge variant="secondary" className="font-mono text-[11px] rounded-[2px]">
                             {r.student.section}
                           </Badge>
                         </td>
@@ -1046,25 +1053,25 @@ function MarksPage() {
                         />
 
                         {/* Results Metrics */}
-                        <td className="text-center font-bold tabular-nums bg-primary/5">{r.total}</td>
-                        <td className="text-center tabular-nums bg-primary/5">{r.pct.toFixed(1)}%</td>
-                        <td className="text-center bg-primary/5">
-                          <Badge variant={r.grade === "F" ? "destructive" : "secondary"} className="text-[10px]">
+                        <td className="text-center font-bold tabular-nums text-[#003366] border-r border-[#e2e8f0]">{r.total}</td>
+                        <td className="text-center tabular-nums font-semibold border-r border-[#e2e8f0]">{r.pct.toFixed(1)}%</td>
+                        <td className="text-center border-r border-[#e2e8f0]">
+                          <Badge variant={r.grade === "F" ? "destructive" : "secondary"} className="text-[10px] rounded-[2px] font-bold">
                             {r.grade}
                           </Badge>
                         </td>
-                        <td className="text-center bg-primary/5">
+                        <td className="text-center border-r border-[#e2e8f0]">
                           <span
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] ${
                               r.pass
-                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                                : "bg-destructive/15 text-destructive"
+                                ? "bg-[#15803d]/10 text-[#15803d] border border-[#15803d]/30"
+                                : "bg-[#b91c1c]/10 text-[#b91c1c] border border-[#b91c1c]/30"
                             }`}
                           >
                             {r.pass ? "PASS" : "FAIL"}
                           </span>
                         </td>
-                        <td className="text-center font-semibold tabular-nums bg-primary/5">#{r.sectionRank}</td>
+                        <td className="text-center font-bold tabular-nums text-[#003366]">#{r.sectionRank}</td>
 
                         {/* Admin Only Delete Row */}
                         {isAdmin && (
@@ -1305,12 +1312,12 @@ function MarkCell({
         onChange={handleChange}
         onBlur={() => commitValue(draft)}
         onKeyDown={handleKeyDown}
-        className={`w-16 h-8 text-center px-1.5 py-1 rounded border tabular-nums text-sm font-semibold transition cursor-pointer focus:cursor-text focus:outline-none focus:ring-2 ${
+        className={`w-16 h-8 text-center px-1.5 py-1 rounded-[2px] border tabular-nums text-xs font-bold transition cursor-pointer focus:cursor-text focus:outline-none focus:ring-1 ${
           isAbsent
-            ? "text-red-600 dark:text-red-400 font-bold bg-red-100/80 dark:bg-red-950/60 border-red-500 dark:border-red-800 focus:ring-red-400 ring-1 ring-red-400"
+            ? "text-[#b91c1c] font-black bg-rose-50 border-[#b91c1c] focus:ring-[#b91c1c]"
             : error
-            ? "border-destructive ring-2 ring-destructive/30 bg-background"
-            : "bg-background border-border hover:border-primary/60 focus:border-primary focus:ring-primary/30 shadow-xs"
+            ? "border-[#b91c1c] ring-1 ring-[#b91c1c] bg-white"
+            : "bg-white border-[#cbd5e1] hover:border-[#003366] focus:border-[#003366] focus:ring-[#003366] text-[#003366]"
         }`}
       />
     </td>

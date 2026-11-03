@@ -26,8 +26,10 @@ function IndexRedirect() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-      <div className="animate-pulse text-sm">Loading Smart Exam Result System...</div>
+    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9] text-[#0b2545]">
+      <div className="animate-pulse text-sm font-serif font-bold">
+        Connecting to Institutional Examination Portal…
+      </div>
     </div>
   );
 }

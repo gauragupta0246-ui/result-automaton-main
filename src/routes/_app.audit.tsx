@@ -190,17 +190,19 @@ function AuditPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-display text-3xl font-bold">System Audit Log</h1>
-            <Badge className="bg-emerald-600/10 text-emerald-600 border border-emerald-500/30 font-mono text-[10px]">
-              ADMIN ONLY
+            <h1 className="font-serif text-2xl font-black text-[#003366] uppercase tracking-wide">
+              Official Examination Audit Register
+            </h1>
+            <Badge className="bg-[#b91c1c] text-white border-0 font-mono text-[10px] font-bold rounded-[2px]">
+              SUPER ADMIN / CONTROLLER
             </Badge>
           </div>
-          <p className="text-muted-foreground text-sm mt-1">
-            Chronological log of logins, staff mark submissions, and student list batch uploads
+          <p className="text-slate-600 text-xs mt-1">
+            Official chronological audit log of staff authentications, marks submissions, and institutional roster updates
           </p>
         </div>
 
@@ -210,7 +212,7 @@ function AuditPage() {
             size="sm"
             onClick={fetchSupabaseLogs}
             disabled={loading}
-            className="gap-1.5"
+            className="gap-1.5 border-[#d1d5db] bg-white hover:bg-slate-50 text-[#003366] font-bold text-xs rounded-[2px]"
           >
             <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh Logs
@@ -219,39 +221,41 @@ function AuditPage() {
       </header>
 
       {/* Control Bar: Filters & Search */}
-      <Card>
-        <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+      <Card className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs">
+        <CardContent className="p-3.5 flex flex-wrap items-center justify-between gap-3">
           <Tabs value={filterAction} onValueChange={setFilterAction} className="w-full md:w-auto">
-            <TabsList className="grid grid-cols-4 md:inline-flex">
-              <TabsTrigger value="ALL" className="text-xs">All Events ({unifiedLogs.length})</TabsTrigger>
-              <TabsTrigger value="MARKS_UPDATE" className="text-xs">Marks Update</TabsTrigger>
-              <TabsTrigger value="LIST_UPLOAD" className="text-xs">List Uploads</TabsTrigger>
-              <TabsTrigger value="LOGIN" className="text-xs">Logins</TabsTrigger>
+            <TabsList className="bg-slate-200 h-8 p-0.5 rounded-[2px] grid grid-cols-4 md:inline-flex">
+              <TabsTrigger value="ALL" className="text-xs font-bold rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white">All Events ({unifiedLogs.length})</TabsTrigger>
+              <TabsTrigger value="MARKS_UPDATE" className="text-xs font-bold rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white">Marks Updates</TabsTrigger>
+              <TabsTrigger value="LIST_UPLOAD" className="text-xs font-bold rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white">List Imports</TabsTrigger>
+              <TabsTrigger value="LOGIN" className="text-xs font-bold rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white">Logins</TabsTrigger>
             </TabsList>
           </Tabs>
 
           <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Search user, roll, subject..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9 text-xs"
+              className="pl-9 h-8 text-xs bg-white border-[#d1d5db] rounded-[2px]"
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Audit Log Table */}
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-muted/40 py-3 px-5 border-b flex flex-row items-center justify-between">
+      <Card className="border border-[#d1d5db] bg-white rounded-[2px] shadow-xs overflow-hidden">
+        <CardHeader className="bg-[#003366] text-white py-2.5 px-4 border-b border-[#002244] flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-sm font-semibold">Audit Records</CardTitle>
-            <CardDescription className="text-xs">
-              Showing {filteredLogs.length} events recorded with user identity and exact details
+            <CardTitle className="text-xs sm:text-sm font-serif font-bold text-white tracking-wide uppercase">
+              RGPV Audit Trail &amp; Verification Register
+            </CardTitle>
+            <CardDescription className="text-[11px] text-blue-100 mt-0.5">
+              Displaying {filteredLogs.length} verified events logged with cryptographic timestamp &amp; user identity
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-xs text-amber-300 font-mono font-bold">
             <Database className="size-3.5" />
             <span>Supabase RLS Protected</span>
           </div>

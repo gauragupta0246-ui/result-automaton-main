@@ -113,3 +113,109 @@ Smart Exam Result System
     formattedEmail: emailContent,
   };
 }
+
+export interface OtpVerificationPayload {
+  email: string;
+  code: string;
+  validityMinutes?: number;
+}
+
+/**
+ * Dispatches an automated Email OTP / Verification Code notification for portal sign-in.
+ * Records the dispatch in Supabase audit_logs, invokes edge function if available, and logs to examStore.
+ */
+export async function sendOtpVerificationEmail(
+  payload: OtpVerificationPayload,
+): Promise<{ success: boolean; formattedEmail: string }> {
+  const dispatchDate = new Date();
+  const formattedTime = dispatchDate.toLocaleString("en-IN", {
+    dateStyle: "full",
+    timeStyle: "medium",
+    timeZone: "Asia/Kolkata",
+  });
+  const validity = payload.validityMinutes || 10;
+
+  const subject = `RGPV Examination Portal: Your Login Verification Code is ${payload.code}`;
+  const emailContent = `
+==============================================================
+RAJIV GANDHI PROUDYOGIKI VISHWAVIDYALAYA (RGPV)
+Office of the Controller of Examinations — Secure Authentication
+==============================================================
+
+Dear Faculty / Officer,
+
+You have requested a secure sign-in verification code for the
+RGPV Examination & Results Management Portal.
+
+YOUR 6-DIGIT VERIFICATION CODE (OTP):
+--------------------------------------------------------------
+                   >>>   ${payload.code}   <<<
+--------------------------------------------------------------
+
+Important Guidelines:
+• This verification code will expire in ${validity} minutes.
+• Do NOT share this code or your institutional credentials with anyone.
+• If you did not request this OTP, please alert the RGPV Examination
+  Helpdesk immediately (1800-200-3926 / exam-cell@univ.ac.in).
+
+Institutional Details:
+• Portal:     Rajiv Gandhi Proudyogiki Vishwavidyalaya (RGPV)
+• Authority:  Office of the Controller of Examinations, Bhopal (M.P.)
+• Timestamp:  ${formattedTime} (IST)
+==============================================================
+  `.trim();
+
+  // 1. Record into Supabase audit_logs
+  try {
+    await supabase.from("audit_logs").insert({
+      user_email: payload.email,
+      action: "EMAIL_OTP_DISPATCHED",
+      details: {
+        email: payload.email,
+        code_preview: `${payload.code.slice(0, 2)}****`,
+        validityMinutes: validity,
+        dispatchTime: formattedTime,
+        notification_type: "EMAIL_OTP",
+        email_subject: subject,
+      },
+      timestamp: dispatchDate.toISOString(),
+    });
+  } catch (err) {
+    console.warn("Audit log OTP dispatch insert skipped:", err);
+  }
+
+  // 2. Dispatch email via Supabase Edge Function or Webhook if active
+  try {
+    await supabase.functions.invoke("send-otp-email", {
+      body: {
+        to: payload.email,
+        code: payload.code,
+        subject,
+        body: emailContent,
+      },
+    });
+  } catch {
+    // Graceful fallback
+  }
+
+  // 3. Local examStore audit log sync
+  try {
+    const { examStore } = await import("@/lib/exam-store");
+    examStore.addAuditEntry({
+      ts: Date.now(),
+      user: `OTP Dispatch [${payload.email}]`,
+      studentRoll: "OTP_VERIFY",
+      subject: "BT205" as any,
+      exam: "midsem",
+      oldValue: null,
+      newValue: `EMAIL_OTP_SENT (${payload.email})`,
+    });
+  } catch {}
+
+  console.info(`[Email OTP] Verification code dispatched to ${payload.email}: ${payload.code}`);
+
+  return {
+    success: true,
+    formattedEmail: emailContent,
+  };
+}

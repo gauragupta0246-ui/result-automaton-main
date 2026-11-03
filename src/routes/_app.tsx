@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Pencil,
   FileBarChart,
-  GraduationCap,
   ClipboardList,
   Languages,
   LogOut,
@@ -12,6 +11,8 @@ import {
   UserCheck,
   Edit2,
   Mail,
+  Phone,
+  Landmark,
 } from "lucide-react";
 
 import { useT, useLang, langStore, type TKey } from "@/lib/i18n";
@@ -30,10 +31,41 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { SubjectApprovalNotificationCenter } from "@/components/subject-approval-notifications";
+import {
+  RgpvTopBar,
+  RgpvBrandHeader,
+  RgpvNavbar,
+  RgpvNotificationTicker,
+  RgpvFooter,
+} from "@/components/rgpv-portal-layout";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
+
+// Official University Emblem SVG
+function UniversityEmblem({ className = "size-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="46" stroke="#ffffff" strokeWidth="3" strokeDasharray="3 3" opacity="0.6" />
+      <circle cx="50" cy="50" r="41" stroke="#f1b82d" strokeWidth="2.5" />
+      <path
+        d="M50 18L58 26H70V38L78 46L70 54V66H58L50 74L42 66H30V54L22 46L30 38V26H42L50 18Z"
+        fill="#ffffff"
+        fillOpacity="0.08"
+        stroke="#ffffff"
+        strokeWidth="1.5"
+      />
+      <circle cx="50" cy="46" r="16" stroke="#f1b82d" strokeWidth="2" fill="#0b2545" />
+      <path
+        d="M40 43C44 41 48 42 50 44C52 42 56 41 60 43V53C56 51 52 52 50 54C48 52 44 51 40 53V43Z"
+        fill="#f1b82d"
+      />
+      <line x1="50" y1="44" x2="50" y2="54" stroke="#0b2545" strokeWidth="1.5" />
+      <path d="M32 74C40 70 60 70 68 74L64 78C56 75 44 75 36 78L32 74Z" fill="#f1b82d" />
+    </svg>
+  );
+}
 
 function AdminEmailSettingsDialog() {
   const { profile, updateAdminEmail } = useAuth();
@@ -74,39 +106,39 @@ function AdminEmailSettingsDialog() {
         <button
           type="button"
           title="Change Admin Email"
-          className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1 cursor-pointer font-medium"
+          className="text-[10px] text-[#0b2545] hover:underline inline-flex items-center gap-1 cursor-pointer font-bold"
         >
           <Edit2 className="size-2.5" />
-          <span>Change Email / बदलें</span>
+          <span>Change Email</span>
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-white border border-[#cbd5e1] rounded-[4px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <ShieldCheck className="size-5 text-emerald-500" />
+          <DialogTitle className="flex items-center gap-2 text-base font-serif font-bold text-[#0b2545]">
+            <ShieldCheck className="size-5 text-[#0b2545]" />
             Super Admin Profile &amp; Email Settings
           </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Configure the Super Admin email. This account has full privileges (editing all marks, merit list export, system resets).
+          <p className="text-xs text-[#475569] mt-1">
+            Configure the Super Admin email. This account has full Controller of Examinations privileges.
           </p>
         </DialogHeader>
 
         <form onSubmit={handleSave} className="space-y-4 pt-2">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground">Super Admin Email Address</label>
+            <label className="text-xs font-bold text-[#0b2545] uppercase">Super Admin Email Address</label>
             <div className="relative">
-              <Mail className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Mail className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="gauragupta0246@gmail.com"
-                className="pl-9 font-mono text-sm"
+                className="pl-9 font-mono text-sm bg-white border-[#cbd5e1] rounded-[4px]"
                 required
               />
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Configured default: <code className="text-emerald-500 font-semibold">gauragupta0246@gmail.com</code>
+            <p className="text-[11px] text-[#475569]">
+              Configured default: <code className="text-[#0b2545] font-bold">gauragupta0246@gmail.com</code>
             </p>
           </div>
 
@@ -116,16 +148,16 @@ function AdminEmailSettingsDialog() {
               variant="outline"
               size="sm"
               onClick={handleResetDefault}
-              className="text-xs"
+              className="text-xs border-[#cbd5e1] rounded-[4px]"
             >
               Reset to Default
             </Button>
             <Button
               type="submit"
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold cursor-pointer"
+              className="bg-[#0b2545] hover:bg-[#133966] text-white text-xs font-bold rounded-[4px] cursor-pointer"
             >
-              Save Email / सुरक्षित करें
+              Save Email
             </Button>
           </DialogFooter>
         </form>
@@ -144,19 +176,19 @@ const ALL_NAV = [
 function LangSwitch({ className }: { className?: string }) {
   const lang = useLang();
   return (
-    <div className={cn("inline-flex items-center gap-1 rounded-md border border-border p-0.5", className)}>
-      <Languages className="mx-1 size-3.5 text-muted-foreground" />
+    <div className={cn("inline-flex items-center gap-1 rounded-[3px] border border-[#cbd5e1] bg-white p-0.5", className)}>
+      <Languages className="mx-1 size-3 text-[#475569]" />
       {(["en", "hi"] as const).map((l) => (
         <button
           key={l}
           type="button"
           onClick={() => langStore.set(l)}
           className={cn(
-            "rounded px-2 py-1 text-[11px] font-medium transition-colors",
-            lang === l ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+            "rounded-[2px] px-1.5 py-0.5 text-[10px] font-bold transition-colors cursor-pointer",
+            lang === l ? "bg-[#0b2545] text-white" : "text-[#475569] hover:bg-slate-100",
           )}
         >
-          {l === "en" ? "English" : "हिन्दी"}
+          {l === "en" ? "EN" : "HI"}
         </button>
       ))}
     </div>
@@ -182,10 +214,9 @@ function AppLayout() {
   }, [mounted, isAuthenticated, navigate]);
 
   if (!mounted || !isAuthenticated) {
-    return <div className="min-h-screen bg-muted/40" />;
+    return <div className="min-h-screen bg-[#f4f6f9]" />;
   }
 
-  // Role-based navigation: Employees cannot see "Audit Log"
   const visibleNav = ALL_NAV.filter((n) => !n.adminOnly || isAdmin);
 
   const handleLogout = async () => {
@@ -195,203 +226,123 @@ function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen flex bg-muted/40">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col bg-sidebar border-r border-sidebar-border shrink-0">
-        <div className="h-16 flex items-center gap-2.5 px-5 border-b border-sidebar-border">
-          <div className="size-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <GraduationCap className="size-5 text-primary-foreground" />
-          </div>
-          <div className="leading-tight">
-            <div className="font-display font-bold text-sm">{t("app.title")}</div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("app.subtitle")}</div>
-          </div>
-        </div>
+    <div className="min-h-screen flex flex-col bg-[#f8f9fa] text-[#111827] font-sans">
+      {/* ── Official RGPV Portal Layout Header Suite ── */}
+      <RgpvTopBar />
+      <RgpvBrandHeader />
+      <RgpvNavbar activeRoute="dashboard" />
+      <RgpvNotificationTicker />
 
-        {/* Sidebar Nav */}
-        <nav className="flex-1 p-3 space-y-1">
-          {visibleNav.map((n) => {
-            const active = pathname === n.to;
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
+      {/* Main Examination Workspace */}
+      <div className="flex-1 flex max-w-[1440px] w-full mx-auto">
+        {/* Desktop Sidebar with Sharp 2px Corners & Royal Blue (#003366) Styling */}
+        <aside className="hidden md:flex w-60 flex-col bg-white border-r border-[#d1d5db] shrink-0 shadow-xs">
+          {/* User Status Bar */}
+          <div className="p-3 border-b border-[#d1d5db] bg-[#f9fafb] space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-[2px] bg-[#003366] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                {isAdmin ? <ShieldCheck className="size-4 text-amber-300" /> : <UserCheck className="size-4 text-sky-200" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold truncate text-[#003366]">
+                  {profile?.full_name || profile?.email || "User"}
+                </div>
+                <div className="text-[10px] text-slate-500 truncate font-mono">{profile?.email}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <Badge
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer",
-                  active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  "text-[9px] font-bold px-1.5 py-0.2 rounded-[2px]",
+                  isAdmin
+                    ? "bg-[#b91c1c] text-white border-[#990000]"
+                    : "bg-[#003366] text-white border-[#002244]"
                 )}
               >
-                <n.icon className="size-4 shrink-0" />
-                <span>{t(n.key)}</span>
-                {n.adminOnly && (
-                  <span className="ml-auto text-[9px] bg-primary/20 text-primary-foreground px-1.5 py-0.5 rounded font-mono">
-                    ADMIN
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+                {isAdmin ? "Controller of Exams" : "Faculty Evaluator"}
+              </Badge>
 
-        {/* User Card in Sidebar Footer */}
-        <div className="p-3 border-t border-sidebar-border space-y-3">
-          <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg bg-sidebar-accent/50 border border-sidebar-border">
-            <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
-              {isAdmin ? <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" /> : <UserCheck className="size-4 text-sky-600 dark:text-sky-400" />}
+              {isAdmin && <AdminEmailSettingsDialog />}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold truncate text-sidebar-foreground">
-                {profile?.full_name || profile?.email || "User"}
+
+            {isAdmin && (
+              <div className="pt-2 border-t border-[#d1d5db] flex items-center justify-between">
+                <span className="text-[10px] font-bold text-[#003366]">Faculty Claims:</span>
+                <SubjectApprovalNotificationCenter />
               </div>
-              <div className="text-[10px] text-muted-foreground truncate">{profile?.email}</div>
-              {isAdmin && (
-                <div className="mt-1">
-                  <AdminEmailSettingsDialog />
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
-          <div className="flex items-center justify-between gap-2 px-1">
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[10px] font-medium px-2 py-0.5",
-                isAdmin
-                  ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                  : "border-sky-500/40 text-sky-600 dark:text-sky-400 bg-sky-500/10"
-              )}
+          {/* Nav Links */}
+          <nav className="flex-1 p-2.5 space-y-1">
+            {visibleNav.map((n) => {
+              const active = pathname === n.to;
+              return (
+                <Link
+                  key={n.to}
+                  to={n.to}
+                  className={cn(
+                    "flex items-center gap-2.5 px-3 py-2 rounded-[2px] text-xs font-bold transition-colors cursor-pointer border",
+                    active
+                      ? "bg-[#003366] text-white border-[#002244] shadow-xs"
+                      : "text-slate-700 hover:bg-[#e6eef5] hover:text-[#003366] border-transparent",
+                  )}
+                >
+                  <n.icon className="size-4 shrink-0" />
+                  <span>{t(n.key)}</span>
+                  {n.adminOnly && (
+                    <span className="ml-auto text-[8px] bg-[#b91c1c] text-white px-1 py-0.2 rounded-[2px] font-mono font-bold">
+                      ADMIN
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Quick link to student portal */}
+          <div className="p-3 border-t border-[#d1d5db] bg-[#f9fafb]">
+            <Link
+              to="/student"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#003366] bg-white border border-[#003366] rounded-[2px] hover:bg-[#003366] hover:text-white transition cursor-pointer"
             >
-              {isAdmin ? "Teacher (Admin)" : "Staff (Employee)"}
-            </Badge>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-              title="Logout"
-            >
-              <LogOut className="size-3.5 mr-1" />
-              <span>Logout</span>
-            </Button>
+              <span>Student Verification Gate →</span>
+            </Link>
           </div>
+        </aside>
 
-          <div className="pt-2 border-t border-sidebar-border">
-            <div className="px-1 text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">{t("lang.label")}</div>
-            <LangSwitch className="w-full justify-start" />
-          </div>
-        </div>
-      </aside>
-
-      {/* Mobile Top Bar */}
-      <div className="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-sidebar border-b border-sidebar-border flex items-center px-4 gap-2">
-        <div className="size-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <GraduationCap className="size-4 text-primary-foreground" />
-        </div>
-        <span className="font-display font-bold text-xs truncate max-w-[120px]">{t("app.title")}</span>
-        
-        <Badge
-          variant="outline"
-          className={cn(
-            "text-[9px] px-1.5 py-0.2 shrink-0 font-medium",
-            isAdmin
-              ? "border-emerald-500/40 text-emerald-600 bg-emerald-500/10"
-              : "border-sky-500/40 text-sky-600 bg-sky-500/10"
-          )}
-        >
-          {isAdmin ? "Teacher (Admin)" : "Staff (Employee)"}
-        </Badge>
-
-        <div className="ml-auto flex items-center gap-1.5">
-          {isAdmin && <AdminEmailSettingsDialog />}
-          {isAdmin && <SubjectApprovalNotificationCenter />}
-          <LangSwitch />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleLogout}
-            className="size-8 text-muted-foreground hover:text-destructive cursor-pointer"
-            title="Logout"
-          >
-            <LogOut className="size-4" />
-          </Button>
-        </div>
+        {/* Content Pane */}
+        <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8">
+          <Outlet />
+        </main>
       </div>
 
-      {/* Main Content Area */}
-      <main className="flex-1 min-w-0 md:pt-0 pt-14 flex flex-col">
-        {/* Desktop Top Header Bar with user & role */}
-        <header className="hidden md:flex h-16 border-b border-border bg-background/80 backdrop-blur px-8 items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <Badge
+      {/* Mobile Bottom Nav */}
+      <div
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[#d1d5db] grid shadow-lg"
+        style={{ gridTemplateColumns: `repeat(${visibleNav.length}, minmax(0,1fr))` }}
+      >
+        {visibleNav.map((n) => {
+          const active = pathname === n.to;
+          return (
+            <Link
+              key={n.to}
+              to={n.to}
               className={cn(
-                "px-2.5 py-1 text-xs font-semibold rounded-full border shadow-xs",
-                isAdmin
-                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-                  : "bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30"
+                "flex flex-col items-center py-2 text-[10px] gap-1 cursor-pointer font-bold",
+                active ? "text-[#003366] bg-[#e6eef5]" : "text-slate-600",
               )}
             >
-              {isAdmin ? "Teacher (Admin) Active" : "Staff (Employee) Active"}
-            </Badge>
+              <n.icon className="size-4" />
+              {t(n.key).split(" ")[0]}
+            </Link>
+          );
+        })}
+      </div>
 
-            <span className="text-xs text-muted-foreground">
-              {isAdmin
-                ? "Full administrative control: upload students, reconfigure exams, and access audit logs"
-                : "Restricted mode: view-only dashboards, single-subject marks entry enabled"}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {isAdmin && <SubjectApprovalNotificationCenter />}
-            <div className="text-right">
-              <div className="text-xs font-semibold leading-tight text-foreground flex items-center justify-end gap-1.5">
-                <span>{profile?.full_name || profile?.email}</span>
-                {isAdmin && <AdminEmailSettingsDialog />}
-              </div>
-              <div className="text-[10px] text-muted-foreground font-mono">{profile?.email}</div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="h-8 text-xs gap-1.5 hover:text-destructive hover:border-destructive/40 cursor-pointer"
-            >
-              <LogOut className="size-3.5" />
-              <span>Logout</span>
-            </Button>
-          </div>
-        </header>
-
-        {/* Mobile bottom nav */}
-        <div
-          className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-sidebar border-t border-sidebar-border grid"
-          style={{ gridTemplateColumns: `repeat(${visibleNav.length}, minmax(0,1fr))` }}
-        >
-          {visibleNav.map((n) => {
-            const active = pathname === n.to;
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={cn(
-                  "flex flex-col items-center py-2 text-[10px] gap-1 cursor-pointer",
-                  active ? "text-primary font-semibold" : "text-muted-foreground",
-                )}
-              >
-                <n.icon className="size-4" />
-                {t(n.key).split(" ")[0]}
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="md:p-8 p-4 md:pb-8 pb-20 max-w-[1400px] w-full mx-auto">
-          <Outlet />
-        </div>
-      </main>
+      {/* ── Official RGPV Footer ── */}
+      <RgpvFooter />
     </div>
   );
 }

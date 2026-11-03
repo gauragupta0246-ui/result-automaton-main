@@ -46,95 +46,196 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: Arial, Helvetica, sans-serif;
+  --font-serif: Arial, Helvetica, sans-serif;
+  --font-sans: Arial, Helvetica, sans-serif;
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.99 0.005 240);
-  --foreground: oklch(0.22 0.03 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.03 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.03 250);
-  --primary: oklch(0.52 0.18 255);
-  --primary-foreground: oklch(0.99 0 0);
-  --primary-soft: oklch(0.95 0.04 255);
-  --secondary: oklch(0.96 0.01 250);
-  --secondary-foreground: oklch(0.3 0.04 255);
-  --muted: oklch(0.965 0.008 250);
-  --muted-foreground: oklch(0.5 0.03 250);
-  --accent: oklch(0.94 0.04 255);
-  --accent-foreground: oklch(0.3 0.08 255);
-  --destructive: oklch(0.6 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.65 0.16 155);
-  --success-foreground: oklch(0.99 0 0);
-  --warning: oklch(0.78 0.15 75);
-  --warning-foreground: oklch(0.2 0.05 75);
-  --border: oklch(0.92 0.01 250);
-  --input: oklch(0.92 0.01 250);
-  --ring: oklch(0.52 0.18 255);
-  --chart-1: oklch(0.52 0.18 255);
-  --chart-2: oklch(0.65 0.16 155);
-  --chart-3: oklch(0.78 0.15 75);
-  --chart-4: oklch(0.6 0.22 25);
-  --chart-5: oklch(0.55 0.15 295);
-  --sidebar: oklch(0.985 0.005 250);
-  --sidebar-foreground: oklch(0.3 0.03 250);
-  --sidebar-primary: oklch(0.52 0.18 255);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.04 255);
-  --sidebar-accent-foreground: oklch(0.3 0.08 255);
-  --sidebar-border: oklch(0.92 0.01 250);
-  --sidebar-ring: oklch(0.52 0.18 255);
+  --radius: 0.125rem;
+  --background: #f8f9fa;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #003366;
+  --primary-foreground: #ffffff;
+  --primary-soft: #e6eef5;
+  --secondary: #b91c1c;
+  --secondary-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --accent: #e2e8f0;
+  --accent-foreground: #003366;
+  --destructive: #b91c1c;
+  --destructive-foreground: #ffffff;
+  --success: #15803d;
+  --success-foreground: #ffffff;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+  --border: #d1d5db;
+  --input: #d1d5db;
+  --ring: #003366;
+  --chart-1: #003366;
+  --chart-2: #b91c1c;
+  --chart-3: #15803d;
+  --chart-4: #002244;
+  --chart-5: #475569;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111827;
+  --sidebar-primary: #003366;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e6eef5;
+  --sidebar-accent-foreground: #003366;
+  --sidebar-border: #d1d5db;
+  --sidebar-ring: #003366;
 }
 
 .dark {
-  --background: oklch(0.18 0.02 250);
-  --foreground: oklch(0.97 0.005 250);
-  --card: oklch(0.22 0.025 250);
-  --card-foreground: oklch(0.97 0.005 250);
-  --popover: oklch(0.22 0.025 250);
-  --popover-foreground: oklch(0.97 0.005 250);
-  --primary: oklch(0.7 0.16 255);
-  --primary-foreground: oklch(0.18 0.02 250);
-  --primary-soft: oklch(0.3 0.08 255);
-  --secondary: oklch(0.28 0.03 250);
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.28 0.03 250);
-  --muted-foreground: oklch(0.7 0.02 250);
-  --accent: oklch(0.32 0.06 255);
-  --accent-foreground: oklch(0.97 0 0);
-  --destructive: oklch(0.65 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.7 0.16 155);
-  --success-foreground: oklch(0.15 0 0);
-  --warning: oklch(0.8 0.15 75);
-  --warning-foreground: oklch(0.2 0.05 75);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.16 255);
-  --sidebar: oklch(0.2 0.025 250);
-  --sidebar-foreground: oklch(0.97 0.005 250);
-  --sidebar-primary: oklch(0.7 0.16 255);
-  --sidebar-primary-foreground: oklch(0.18 0.02 250);
-  --sidebar-accent: oklch(0.3 0.06 255);
-  --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.7 0.16 255);
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+  --primary: #38bdf8;
+  --primary-foreground: #0b2545;
+  --primary-soft: #1e293b;
+  --secondary: #475569;
+  --secondary-foreground: #f8fafc;
+  --muted: #334155;
+  --muted-foreground: #94a3b8;
+  --accent: #334155;
+  --accent-foreground: #f8fafc;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --border: #334155;
+  --input: #334155;
+  --ring: #38bdf8;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #38bdf8;
+  --sidebar-primary-foreground: #0b2545;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #334155;
+  --sidebar-ring: #38bdf8;
 }
 
 @layer base {
   * { border-color: var(--color-border); }
+
+  html,
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01";
+    font-family: Arial, Helvetica, sans-serif !important;
+    letter-spacing: normal;
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+
+  body,
+  body * {
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+
+  h1, h2, h3, h4, h5, h6,
+  button,
+  input,
+  select,
+  textarea,
+  table,
+  thead,
+  tbody,
+  tfoot,
+  tr,
+  th,
+  td,
+  label {
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Official RGPV Portal Typography & Menu Items
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Column category headers: font-weight: 700 (bold), uppercase, font-size: 13px, color: #002b66 (RGPV Deep Navy) */
+.rgpv-category-header,
+[data-rgpv-category-header] {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 13px !important;
+  color: #002b66 !important;
+  letter-spacing: 0.02em;
+}
+
+/* Menu list items & sub-links:
+   - Text color for links & menu items: #374151 (Dark slate gray), font-size: 12.5px to 13px, font-weight: normal (400)
+   - Add classic small arrow prefix ('›') before each sub-link
+   - Hover color: Crimson #b91c1c with underline
+*/
+.rgpv-menu-link,
+.rgpv-sublink,
+.rgpv-dropdown-link,
+.rgpv-dropdown a,
+.rgpv-dropdown-item,
+nav .group .hidden a,
+nav .group .hidden div.cursor-pointer {
+  font-family: Arial, Helvetica, sans-serif !important;
+  color: #374151 !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  text-decoration: none !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: color 0.15s ease !important;
+  cursor: pointer;
+}
+
+.rgpv-menu-link::before,
+.rgpv-sublink::before,
+.rgpv-dropdown-link::before,
+.rgpv-dropdown a::before,
+.rgpv-dropdown-item::before,
+nav .group .hidden a::before,
+nav .group .hidden div.cursor-pointer::before {
+  content: "›" !important;
+  display: inline-block !important;
+  margin-right: 6px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #6b7280 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+}
+
+.rgpv-menu-link:hover,
+.rgpv-sublink:hover,
+.rgpv-dropdown-link:hover,
+.rgpv-dropdown a:hover,
+.rgpv-dropdown-item:hover,
+nav .group .hidden a:hover,
+nav .group .hidden div.cursor-pointer:hover {
+  color: #b91c1c !important;
+  text-decoration: underline !important;
+}
+
+.rgpv-menu-link:hover::before,
+.rgpv-sublink:hover::before,
+.rgpv-dropdown-link:hover::before,
+.rgpv-dropdown a:hover::before,
+.rgpv-dropdown-item:hover::before,
+nav .group .hidden a:hover::before,
+nav .group .hidden div.cursor-pointer:hover::before {
+  color: #b91c1c !important;
+  text-decoration: none !important;
 }
 /* Kill Lovable badge completely */
 [data-lovable-badge],
