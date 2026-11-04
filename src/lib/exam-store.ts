@@ -38,6 +38,37 @@ export const SUBJECT_NAMES: Record<Subject, string> = {
   "BT-205": "Basic Computer Engineering",
 };
 
+export type FirstYearGroup = "chemistry" | "physics";
+
+export const CHEMISTRY_GROUP_BASE: readonly Subject[] = [
+  "BT-101", // Engineering Chemistry
+  "BT-103", // English for Communication
+  "BT-104", // Basic Electrical & Electronics Engineering
+  "BT-105", // Engineering Graphics
+];
+
+export const PHYSICS_GROUP_BASE: readonly Subject[] = [
+  "BT-201", // Engineering Physics
+  "BT-203", // Basic Mechanical Engineering
+  "BT-204", // Basic Civil Engineering & Mechanics
+  "BT-205", // Basic Computer Engineering
+];
+
+export function getCompulsoryMathSubject(semester: number): Subject {
+  return Number(semester) === 2 ? "BT-202" : "BT-102";
+}
+
+export function getGroupSubjects(group: FirstYearGroup | null | undefined, semester: number = 1): Subject[] {
+  const math = getCompulsoryMathSubject(semester);
+  if (group === "chemistry") {
+    return ["BT-101", math, "BT-103", "BT-104", "BT-105"];
+  }
+  if (group === "physics") {
+    return ["BT-201", math, "BT-203", "BT-204", "BT-205"];
+  }
+  return [...SUBJECTS];
+}
+
 // Subject aliases so any incoming sheet (legacy or new) maps to standard active subjects
 export const SUBJECT_CODE_MAP: Record<string, Subject> = {
   "BT-101": "BT-101",
@@ -106,6 +137,8 @@ interface State {
   updated: Record<ExamType, Record<string, number>>;
   config: Record<ExamType, ExamConfig>;
   audit: AuditEntry[];
+  activeGroup?: FirstYearGroup;
+  activeSemester?: number;
 }
 
 const KEY = "exam-store-v7";
@@ -184,7 +217,15 @@ function seed(): State {
     updated[e] = upd;
   }
 
-  return { students, marks, updated, config: defaults, audit: [] };
+  return {
+    students,
+    marks,
+    updated,
+    config: defaults,
+    audit: [],
+    activeGroup: "chemistry",
+    activeSemester: 1,
+  };
 }
 
 // Stable initial state used during SSR AND on first client render.
@@ -194,6 +235,8 @@ const listeners = new Set<() => void>();
 
 export function migrate(raw: State): State {
   if (!raw.updated) raw.updated = { midsem: {}, put: {} };
+  if (!raw.activeGroup) raw.activeGroup = "chemistry";
+  if (!raw.activeSemester) raw.activeSemester = 1;
   raw.students = raw.students.map((s, i) => ({
     ...s,
     branch: s.branch ?? BRANCHES[i % BRANCHES.length],
@@ -251,6 +294,12 @@ export const examStore = {
   subscribe: (l: () => void) => {
     listeners.add(l);
     return () => listeners.delete(l);
+  },
+  setActiveGroup(group: FirstYearGroup) {
+    setState((s) => ({ ...s, activeGroup: group }));
+  },
+  setActiveSemester(semester: number) {
+    setState((s) => ({ ...s, activeSemester: semester }));
   },
   setMark(exam: ExamType, studentId: string, subject: Subject, value: MarkValue | null, user: string) {
     const student = state.students.find((s) => s.id === studentId);

@@ -13,6 +13,8 @@ import {
   Mail,
   Phone,
   Landmark,
+  FlaskConical,
+  Atom,
 } from "lucide-react";
 
 import { useT, useLang, langStore, type TKey } from "@/lib/i18n";
@@ -31,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { SubjectApprovalNotificationCenter } from "@/components/subject-approval-notifications";
+import { useExamStore, examStore, type FirstYearGroup } from "@/lib/exam-store";
 import {
   RgpvTopBar,
   RgpvBrandHeader,
@@ -201,6 +204,8 @@ function AppLayout() {
   const t = useT();
   const { profile, isAdmin, isAuthenticated, signOut } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const activeGroup = useExamStore((s) => s.activeGroup ?? "chemistry");
+  const activeSemester = useExamStore((s) => s.activeSemester ?? 1);
 
   useEffect(() => {
     setMounted(true);
@@ -299,6 +304,105 @@ function AppLayout() {
                 </Link>
               );
             })}
+
+            {/* First Year Subject Groups Section */}
+            <div className="pt-3 pb-1 border-t border-[#d1d5db] mt-2 space-y-1">
+              <div className="px-2 pb-1 flex items-center justify-between">
+                <span className="text-[10px] font-bold text-[#003366] uppercase tracking-wider">
+                  First Year Groups
+                </span>
+                <span className="text-[9px] bg-slate-100 text-[#003366] border border-[#d1d5db] px-1 py-0.2 rounded-[2px] font-mono font-bold">
+                  5 SUB
+                </span>
+              </div>
+
+              {/* Semester quick selector */}
+              <div className="px-2 pb-1.5 flex items-center justify-between gap-1">
+                <span className="text-[10px] text-slate-500 font-bold">Semester:</span>
+                <div className="inline-flex rounded-[2px] border border-[#d1d5db] bg-slate-100 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => examStore.setActiveSemester(1)}
+                    className={cn(
+                      "px-2 py-0.5 text-[10px] font-bold rounded-[2px] cursor-pointer transition-colors",
+                      activeSemester === 1
+                        ? "bg-[#003366] text-white shadow-xs"
+                        : "text-slate-600 hover:text-[#003366]"
+                    )}
+                  >
+                    Sem 1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => examStore.setActiveSemester(2)}
+                    className={cn(
+                      "px-2 py-0.5 text-[10px] font-bold rounded-[2px] cursor-pointer transition-colors",
+                      activeSemester === 2
+                        ? "bg-[#003366] text-white shadow-xs"
+                        : "text-slate-600 hover:text-[#003366]"
+                    )}
+                  >
+                    Sem 2
+                  </button>
+                </div>
+              </div>
+
+              {/* Chemistry Group Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  examStore.setActiveGroup("chemistry");
+                  if (pathname !== "/marks") navigate({ to: "/marks" });
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2.5 px-3 py-2 rounded-[2px] text-xs font-bold transition-colors cursor-pointer border text-left",
+                  activeGroup === "chemistry" && pathname === "/marks"
+                    ? "bg-[#003366] text-white border-[#002244] shadow-xs"
+                    : "text-slate-700 hover:bg-[#e6eef5] hover:text-[#003366] border-transparent"
+                )}
+              >
+                <FlaskConical className={cn("size-4 shrink-0", activeGroup === "chemistry" && pathname === "/marks" ? "text-amber-300" : "text-[#003366]")} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate">Chemistry Group</div>
+                  <div className={cn("text-[9px] font-normal", activeGroup === "chemistry" && pathname === "/marks" ? "text-blue-100" : "text-slate-500")}>
+                    First Year (5 Subjects)
+                  </div>
+                </div>
+                {activeGroup === "chemistry" && pathname === "/marks" && (
+                  <span className="text-[8px] bg-[#15803d] text-white px-1 py-0.2 rounded-[2px] font-mono font-bold">
+                    ACTIVE
+                  </span>
+                )}
+              </button>
+
+              {/* Physics Group Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  examStore.setActiveGroup("physics");
+                  if (pathname !== "/marks") navigate({ to: "/marks" });
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2.5 px-3 py-2 rounded-[2px] text-xs font-bold transition-colors cursor-pointer border text-left",
+                  activeGroup === "physics" && pathname === "/marks"
+                    ? "bg-[#003366] text-white border-[#002244] shadow-xs"
+                    : "text-slate-700 hover:bg-[#e6eef5] hover:text-[#003366] border-transparent"
+                )}
+              >
+                <Atom className={cn("size-4 shrink-0", activeGroup === "physics" && pathname === "/marks" ? "text-sky-300" : "text-[#003366]")} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate">Physics Group</div>
+                  <div className={cn("text-[9px] font-normal", activeGroup === "physics" && pathname === "/marks" ? "text-blue-100" : "text-slate-500")}>
+                    First Year (5 Subjects)
+                  </div>
+                </div>
+                {activeGroup === "physics" && pathname === "/marks" && (
+                  <span className="text-[8px] bg-[#15803d] text-white px-1 py-0.2 rounded-[2px] font-mono font-bold">
+                    ACTIVE
+                  </span>
+                )}
+              </button>
+            </div>
           </nav>
 
           {/* Quick link to student portal */}

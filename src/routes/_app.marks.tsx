@@ -16,8 +16,11 @@ import {
   ShieldAlert,
   Send,
   BookOpen,
+  FlaskConical,
+  Atom,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { cn } from "@/lib/utils";
 import {
   buildStudentIndex,
   lookupStudent,
@@ -53,6 +56,7 @@ import {
   useExamStore,
   examStore,
   computeResults,
+  gradeFor,
   EXAM_LABELS,
   SUBJECTS,
   SUBJECT_NAMES,
@@ -62,6 +66,9 @@ import {
   type Subject,
   type Section,
   type MarkValue,
+  type FirstYearGroup,
+  getGroupSubjects,
+  getCompulsoryMathSubject,
 } from "@/lib/exam-store";
 
 export const Route = createFileRoute("/_app/marks")({
@@ -90,6 +97,25 @@ function MarksPage() {
   const [subjectFilter, setSubjectFilter] = useState<string>("");
   const [search, setSearch] = useState("");
   const [showClaimModal, setShowClaimModal] = useState(false);
+
+  const activeGroup: FirstYearGroup = state.activeGroup ?? "chemistry";
+  const activeSemester: number = state.activeSemester ?? 1;
+
+  const compulsoryMath = getCompulsoryMathSubject(activeSemester);
+  const groupSubjects = useMemo(() => {
+    return getGroupSubjects(activeGroup, activeSemester);
+  }, [activeGroup, activeSemester]);
+
+  // Ensure subjectFilter is within the current active group (5 subjects) and pre-select compulsory math paper when semester switches
+  useEffect(() => {
+    if (!subjectFilter || !groupSubjects.includes(subjectFilter as Subject)) {
+      setSubjectFilter(compulsoryMath);
+    } else if (subjectFilter === "BT-102" && activeSemester === 2) {
+      setSubjectFilter("BT-202");
+    } else if (subjectFilter === "BT-202" && activeSemester === 1) {
+      setSubjectFilter("BT-102");
+    }
+  }, [activeGroup, activeSemester, groupSubjects, compulsoryMath, subjectFilter]);
 
   // Refs for smooth native file dialog opening
   const importExcelInputRef = useRef<HTMLInputElement>(null);
@@ -140,6 +166,70 @@ function MarksPage() {
       return true;
     });
   }, [results, isFilterReady, section, search]);
+
+  // Dynamic 5-subject calculations and Section Rank for Admin role
+  const adminGroupStats = useMemo(() => {
+    if (!isAdmin || !section) {
+      return new Map<
+        string,
+        { total: number; maxGroupTotal: number; pct: number; grade: string; pass: boolean; sectionRank: number }
+      >();
+    }
+
+    const maxGroupTotal = cfg.maxMarks * groupSubjects.length;
+    const minPassPerSub = Math.floor((cfg.passPct / 100) * cfg.maxMarks);
+
+    // Compute metrics for all students in this section based on active 5 subjects
+    const sectionStudents = state.students.filter((s) => s.section === section);
+    const statsList = sectionStudents.map((stu) => {
+      const studentMarks = state.marks[exam]?.[stu.id] ?? {};
+      let total = 0;
+      let hasAny = false;
+      let allPass = true;
+
+      for (const sub of groupSubjects) {
+        const v = studentMarks[sub];
+        if (typeof v === "number") {
+          total += v;
+          hasAny = true;
+          if (v < minPassPerSub) allPass = false;
+        } else if (v === "A") {
+          hasAny = true;
+          allPass = false;
+        } else {
+          allPass = false;
+        }
+      }
+
+      const pct = hasAny ? (total / maxGroupTotal) * 100 : 0;
+      const { grade, pass } = gradeFor(pct, cfg.passPct);
+
+      return {
+        studentId: stu.id,
+        total,
+        maxGroupTotal,
+        pct,
+        grade,
+        pass: pass && allPass && hasAny,
+      };
+    });
+
+    // Sort descending by total to assign Section Rank
+    const sorted = [...statsList].sort((a, b) => b.total - a.total);
+    const rankMap = new Map<
+      string,
+      { total: number; maxGroupTotal: number; pct: number; grade: string; pass: boolean; sectionRank: number }
+    >();
+
+    sorted.forEach((item, index) => {
+      rankMap.set(item.studentId, {
+        ...item,
+        sectionRank: index + 1,
+      });
+    });
+
+    return rankMap;
+  }, [isAdmin, section, state.students, state.marks, exam, groupSubjects, cfg]);
 
   const handleExport = () => {
     const rows = results.map((r) => {
@@ -721,11 +811,83 @@ function MarksPage() {
 
               <div className="h-8 w-px bg-[#d1d5db] hidden md:block mt-3" />
 
-              {/* Section Selector (Mandatory, No "All" Option) */}
+              {/* 2. Semester Selector (Semester 1 / Semester 2) */}
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-bold text-[#003366] uppercase tracking-wider">
-                    2. Section
+                    2. Semester
+                  </span>
+                  <span className="text-[10px] text-[#15803d] font-bold">
+                    ✓ Sem {activeSemester}
+                  </span>
+                </div>
+                <Tabs
+                  value={String(activeSemester)}
+                  onValueChange={(v) => {
+                    const sem = Number(v);
+                    examStore.setActiveSemester(sem);
+                    setUploadSemester(sem);
+                  }}
+                >
+                  <TabsList className="h-8 bg-slate-200 p-0.5 rounded-[2px]">
+                    <TabsTrigger
+                      value="1"
+                      className="text-xs font-bold px-3 h-7 rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white cursor-pointer"
+                    >
+                      Sem 1
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="2"
+                      className="text-xs font-bold px-3 h-7 rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white cursor-pointer"
+                    >
+                      Sem 2
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <div className="h-8 w-px bg-[#d1d5db] hidden md:block mt-3" />
+
+              {/* 3. First Year Group Selector (Chemistry vs Physics) */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-[#003366] uppercase tracking-wider">
+                    3. Group
+                  </span>
+                  <Badge className="text-[9px] py-0 px-1 bg-[#003366] text-white rounded-[2px] font-bold">
+                    5 Subjects
+                  </Badge>
+                </div>
+                <Tabs
+                  value={activeGroup}
+                  onValueChange={(v) => examStore.setActiveGroup(v as FirstYearGroup)}
+                >
+                  <TabsList className="h-8 bg-slate-200 p-0.5 rounded-[2px]">
+                    <TabsTrigger
+                      value="chemistry"
+                      className="text-xs font-bold px-2.5 h-7 rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white cursor-pointer flex items-center gap-1"
+                    >
+                      <FlaskConical className="size-3 text-amber-500" />
+                      <span>Chemistry</span>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="physics"
+                      className="text-xs font-bold px-2.5 h-7 rounded-[2px] data-[state=active]:bg-[#003366] data-[state=active]:text-white cursor-pointer flex items-center gap-1"
+                    >
+                      <Atom className="size-3 text-sky-500" />
+                      <span>Physics</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <div className="h-8 w-px bg-[#d1d5db] hidden md:block mt-3" />
+
+              {/* 4. Section Selector (Mandatory, No "All" Option) */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-[#003366] uppercase tracking-wider">
+                    4. Section
                   </span>
                   {section ? (
                     <span className="text-[10px] text-[#15803d] font-bold">
@@ -739,7 +901,7 @@ function MarksPage() {
                 </div>
                 <Select value={section} onValueChange={setSection}>
                   <SelectTrigger
-                    className={`w-[150px] h-8 text-xs bg-white cursor-pointer rounded-[2px] font-medium ${
+                    className={`w-[130px] h-8 text-xs bg-white cursor-pointer rounded-[2px] font-medium ${
                       !section ? "border-[#b91c1c] ring-1 ring-[#b91c1c]/30" : "border-[#d1d5db]"
                     }`}
                   >
@@ -767,11 +929,11 @@ function MarksPage() {
 
               <div className="h-8 w-px bg-border hidden md:block mt-3" />
 
-              {/* Subject Selector (Mandatory, No "All" Option) */}
+              {/* 5. Subject Selector (Mandatory, Filtered to Active Group 5 Subjects) */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    3. Subject
+                    5. Subject ({groupSubjects.length})
                   </span>
                   {subjectFilter ? (
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold truncate max-w-[150px]">
@@ -785,14 +947,26 @@ function MarksPage() {
                 </div>
                 <Select value={subjectFilter} onValueChange={setSubjectFilter}>
                   <SelectTrigger
-                    className={`w-[240px] h-9 text-xs bg-background cursor-pointer ${
+                    className={`w-[320px] max-w-full h-9 text-xs bg-background cursor-pointer ${
                       !subjectFilter ? "border-amber-500/60 ring-1 ring-amber-500/30" : "border-border"
                     }`}
                   >
-                    <SelectValue placeholder="Select Subject" />
+                    <SelectValue placeholder="Select Subject">
+                      {subjectFilter ? (
+                        <span className="truncate">
+                          <span className="font-semibold">{subjectFilter}</span> — {SUBJECT_NAMES[subjectFilter as Subject]}
+                          {subjectFilter === compulsoryMath && (
+                            <span className="ml-1.5 text-[9px] bg-[#b91c1c] text-white px-1 py-0.2 rounded-[2px] font-bold uppercase shrink-0">
+                              COMPULSORY
+                            </span>
+                          )}
+                        </span>
+                      ) : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {SUBJECTS.map((s) => {
+                    {groupSubjects.map((s) => {
+                      const isCompulsory = s === compulsoryMath;
                       const isAuth =
                         isEmployee &&
                         userApprovedClaims.some(
@@ -801,6 +975,11 @@ function MarksPage() {
                       return (
                         <SelectItem key={s} value={s} className="cursor-pointer text-xs">
                           <span className="font-semibold">{s}</span> — {SUBJECT_NAMES[s]}
+                          {isCompulsory && (
+                            <span className="ml-1 text-[9px] bg-[#b91c1c] text-white px-1.5 py-0.2 rounded-[2px] font-bold uppercase">
+                              COMPULSORY
+                            </span>
+                          )}
                           {isAuth && (
                             <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
                               (✓ Authorized)
@@ -961,7 +1140,7 @@ function MarksPage() {
               </div>
             </Card>
           ) : (
-            /* Focused Student Marks Table with ONLY ONE single editable marks column */
+            /* Student Marks Table (Admin: All 5 Active Group Subjects side-by-side; Staff: Single Subject) */
             <Card className="overflow-hidden shadow-xs border border-[#d1d5db] bg-white rounded-[2px]">
               {/* Active Scope Summary Banner */}
               <div className="px-4 py-2.5 border-b border-[#d1d5db] bg-[#f8f9fa] flex flex-wrap items-center justify-between gap-2">
@@ -969,11 +1148,15 @@ function MarksPage() {
                   <Badge className="bg-[#003366] text-white font-mono text-[11px] rounded-[2px] font-bold">Section {section}</Badge>
                   <span className="text-slate-400">·</span>
                   <span className="font-serif font-bold text-[#003366] text-sm">
-                    {subjectFilter} — {SUBJECT_NAMES[subjectFilter as Subject]}
+                    {isAdmin ? (
+                      `${activeGroup === "chemistry" ? "Chemistry Group" : "Physics Group"} (Semester ${activeSemester}) — 5 Subjects`
+                    ) : (
+                      `${subjectFilter} — ${SUBJECT_NAMES[subjectFilter as Subject]}`
+                    )}
                   </span>
                   <span className="text-slate-400">·</span>
                   <Badge variant="outline" className="text-[11px] border-[#d1d5db] rounded-[2px]">
-                    {EXAM_LABELS[exam]} (Max: {cfg.maxMarks})
+                    {EXAM_LABELS[exam]} {isAdmin ? `(Max Total: ${cfg.maxMarks * groupSubjects.length})` : `(Max: ${cfg.maxMarks})`}
                   </Badge>
                   <span className="text-slate-400">·</span>
                   <span className="text-slate-600 font-medium">{filtered.length} candidates registered</span>
@@ -997,15 +1180,50 @@ function MarksPage() {
                       <th className="text-left px-3 py-2.5 font-bold min-w-[170px] border-r border-[#002244]">Student Name</th>
                       <th className="text-center px-3 py-2.5 font-bold w-16 border-r border-[#002244]">Sec</th>
 
-                      {/* ONLY ONE EDITABLE MARKS COLUMN */}
-                      <th className="text-center px-4 py-2.5 font-bold min-w-[140px] bg-[#b91c1c] text-white border-x-2 border-[#990000]">
-                        <div className="font-bold text-white text-xs">
-                          {subjectFilter} Marks
-                        </div>
-                        <div className="text-[10px] font-normal normal-case text-amber-200">
-                          {SUBJECT_NAMES[subjectFilter as Subject]} (Max {cfg.maxMarks})
-                        </div>
-                      </th>
+                      {/* Marks Columns */}
+                      {isAdmin ? (
+                        /* Admin View: All 5 subjects of active group rendered side-by-side */
+                        groupSubjects.map((s) => {
+                          const isCompulsory = s === compulsoryMath;
+                          return (
+                            <th
+                              key={s}
+                              className={cn(
+                                "text-center px-2 py-2 font-bold min-w-[125px] border-r border-[#002244]",
+                                isCompulsory ? "bg-[#b91c1c] text-white" : "bg-[#002b55] text-white"
+                              )}
+                            >
+                              <div className="font-bold text-xs flex items-center justify-center gap-1">
+                                <span>{s}</span>
+                                {isCompulsory && (
+                                  <span className="text-[8px] bg-white text-[#b91c1c] px-1 py-0.2 rounded-[2px] font-mono font-bold">
+                                    COMPULSORY
+                                  </span>
+                                )}
+                              </div>
+                              <div
+                                className="text-[9px] font-normal normal-case text-blue-100 truncate max-w-[130px] mx-auto"
+                                title={SUBJECT_NAMES[s]}
+                              >
+                                {SUBJECT_NAMES[s]}
+                              </div>
+                              <div className="text-[9px] font-mono text-amber-200">
+                                (Max {cfg.maxMarks})
+                              </div>
+                            </th>
+                          );
+                        })
+                      ) : (
+                        /* Staff view: single subject column untouched */
+                        <th className="text-center px-4 py-2.5 font-bold min-w-[140px] bg-[#b91c1c] text-white border-x-2 border-[#990000]">
+                          <div className="font-bold text-white text-xs">
+                            {subjectFilter} Marks
+                          </div>
+                          <div className="text-[10px] font-normal normal-case text-amber-200">
+                            {SUBJECT_NAMES[subjectFilter as Subject]} (Max {cfg.maxMarks})
+                          </div>
+                        </th>
+                      )}
 
                       <th className="text-center px-3 py-2.5 font-bold border-r border-[#002244] min-w-[65px]">Total</th>
                       <th className="text-center px-3 py-2.5 font-bold border-r border-[#002244] min-w-[60px]">%</th>
@@ -1016,89 +1234,146 @@ function MarksPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#d1d5db]">
-                    {filtered.map((r, idx) => (
-                      <tr key={r.student.id} className="odd:bg-white even:bg-[#f9fafb] hover:bg-[#e6eef5] transition-colors">
-                        {/* Sr. No */}
-                        <td className="px-3 py-2 text-slate-500 tabular-nums font-mono text-xs border-r border-[#e2e8f0]">{idx + 1}</td>
+                    {filtered.map((r, idx) => {
+                      const adminStats = isAdmin ? adminGroupStats.get(r.student.id) : null;
+                      return (
+                        <tr key={r.student.id} className="odd:bg-white even:bg-[#f9fafb] hover:bg-[#e6eef5] transition-colors">
+                          {/* Sr. No */}
+                          <td className="px-3 py-2 text-slate-500 tabular-nums font-mono text-xs border-r border-[#e2e8f0]">{idx + 1}</td>
 
-                        {/* Student Roll No (Strictly Read-Only) */}
-                        <td className="px-3 py-2 font-mono text-xs font-bold text-[#003366] border-r border-[#e2e8f0]">
-                          <Badge variant="outline" className="font-mono text-xs rounded-[2px] border-[#cbd5e1]">
-                            {r.student.roll}
-                          </Badge>
-                        </td>
-
-                        {/* Student Name: Strictly Read-Only */}
-                        <td className="px-3 py-2 border-r border-[#e2e8f0]">
-                          <span className="font-bold text-[#111827] text-xs">{r.student.name}</span>
-                        </td>
-
-                        {/* Section: Strictly Read-Only */}
-                        <td className="px-2 py-2 text-center border-r border-[#e2e8f0]">
-                          <Badge variant="secondary" className="font-mono text-[11px] rounded-[2px]">
-                            {r.student.section}
-                          </Badge>
-                        </td>
-
-                        {/* Single Subject Marks Column (Editable) */}
-                        <MarkCell
-                          examType={exam}
-                          studentId={r.student.id}
-                          subject={subjectFilter as Subject}
-                          value={r.marks[subjectFilter as Subject] ?? null}
-                          max={cfg.maxMarks}
-                          user={profile?.email ?? "employee"}
-                          rowIndex={idx}
-                          colIndex={0}
-                        />
-
-                        {/* Results Metrics */}
-                        <td className="text-center font-bold tabular-nums text-[#003366] border-r border-[#e2e8f0]">{r.total}</td>
-                        <td className="text-center tabular-nums font-semibold border-r border-[#e2e8f0]">{r.pct.toFixed(1)}%</td>
-                        <td className="text-center border-r border-[#e2e8f0]">
-                          <Badge variant={r.grade === "F" ? "destructive" : "secondary"} className="text-[10px] rounded-[2px] font-bold">
-                            {r.grade}
-                          </Badge>
-                        </td>
-                        <td className="text-center border-r border-[#e2e8f0]">
-                          <span
-                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] ${
-                              r.pass
-                                ? "bg-[#15803d]/10 text-[#15803d] border border-[#15803d]/30"
-                                : "bg-[#b91c1c]/10 text-[#b91c1c] border border-[#b91c1c]/30"
-                            }`}
-                          >
-                            {r.pass ? "PASS" : "FAIL"}
-                          </span>
-                        </td>
-                        <td className="text-center font-bold tabular-nums text-[#003366]">#{r.sectionRank}</td>
-
-                        {/* Admin Only Delete Row */}
-                        {isAdmin && (
-                          <td className="text-center px-2 py-2">
-                            <button
-                              type="button"
-                              title="Delete student"
-                              onClick={() => {
-                                if (confirm(`Delete student ${r.student.name} (${r.student.roll})?`)) {
-                                  examStore.deleteStudent(r.student.id);
-                                  void logAuditEvent("STUDENT_DELETE", { roll: r.student.roll, name: r.student.name });
-                                  toast.success("Student removed");
-                                }
-                              }}
-                              className="p-1 rounded hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition cursor-pointer"
-                            >
-                              <Trash2 className="size-3.5" />
-                            </button>
+                          {/* Student Roll No (Strictly Read-Only) */}
+                          <td className="px-3 py-2 font-mono text-xs font-bold text-[#003366] border-r border-[#e2e8f0]">
+                            <Badge variant="outline" className="font-mono text-xs rounded-[2px] border-[#cbd5e1]">
+                              {r.student.roll}
+                            </Badge>
                           </td>
-                        )}
-                      </tr>
-                    ))}
+
+                          {/* Student Name: Strictly Read-Only */}
+                          <td className="px-3 py-2 border-r border-[#e2e8f0]">
+                            <span className="font-bold text-[#111827] text-xs">{r.student.name}</span>
+                          </td>
+
+                          {/* Section: Strictly Read-Only */}
+                          <td className="px-2 py-2 text-center border-r border-[#e2e8f0]">
+                            <Badge variant="secondary" className="font-mono text-[11px] rounded-[2px]">
+                              {r.student.section}
+                            </Badge>
+                          </td>
+
+                          {isAdmin ? (
+                            <>
+                              {/* All 5 Subject Columns rendered side-by-side */}
+                              {groupSubjects.map((sub, colIdx) => (
+                                <MarkCell
+                                  key={sub}
+                                  examType={exam}
+                                  studentId={r.student.id}
+                                  subject={sub}
+                                  value={r.marks[sub] ?? null}
+                                  max={cfg.maxMarks}
+                                  user={profile?.email ?? "admin"}
+                                  rowIndex={idx}
+                                  colIndex={colIdx}
+                                />
+                              ))}
+
+                              {/* Dynamic 5-Subject Metrics */}
+                              <td className="text-center font-bold tabular-nums text-[#003366] border-r border-[#e2e8f0]">
+                                <span className="text-xs">{adminStats?.total ?? 0}</span>
+                                <span className="text-[9px] text-slate-400 block font-normal font-mono">
+                                  /{adminStats?.maxGroupTotal ?? cfg.maxMarks * 5}
+                                </span>
+                              </td>
+                              <td className="text-center tabular-nums font-semibold border-r border-[#e2e8f0]">
+                                {(adminStats?.pct ?? 0).toFixed(1)}%
+                              </td>
+                              <td className="text-center border-r border-[#e2e8f0]">
+                                <Badge
+                                  variant={adminStats?.grade === "F" ? "destructive" : "secondary"}
+                                  className="text-[10px] rounded-[2px] font-bold"
+                                >
+                                  {adminStats?.grade ?? "—"}
+                                </Badge>
+                              </td>
+                              <td className="text-center border-r border-[#e2e8f0]">
+                                <span
+                                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] ${
+                                    adminStats?.pass
+                                      ? "bg-[#15803d]/10 text-[#15803d] border border-[#15803d]/30"
+                                      : "bg-[#b91c1c]/10 text-[#b91c1c] border border-[#b91c1c]/30"
+                                  }`}
+                                >
+                                  {adminStats?.pass ? "PASS" : "FAIL"}
+                                </span>
+                              </td>
+                              <td className="text-center font-bold tabular-nums text-[#003366]">
+                                #{adminStats?.sectionRank ?? "—"}
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              {/* Staff view: Single Subject Marks Column (Untouched) */}
+                              <MarkCell
+                                examType={exam}
+                                studentId={r.student.id}
+                                subject={subjectFilter as Subject}
+                                value={r.marks[subjectFilter as Subject] ?? null}
+                                max={cfg.maxMarks}
+                                user={profile?.email ?? "employee"}
+                                rowIndex={idx}
+                                colIndex={0}
+                              />
+
+                              {/* Results Metrics */}
+                              <td className="text-center font-bold tabular-nums text-[#003366] border-r border-[#e2e8f0]">{r.total}</td>
+                              <td className="text-center tabular-nums font-semibold border-r border-[#e2e8f0]">{r.pct.toFixed(1)}%</td>
+                              <td className="text-center border-r border-[#e2e8f0]">
+                                <Badge variant={r.grade === "F" ? "destructive" : "secondary"} className="text-[10px] rounded-[2px] font-bold">
+                                  {r.grade}
+                                </Badge>
+                              </td>
+                              <td className="text-center border-r border-[#e2e8f0]">
+                                <span
+                                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] ${
+                                    r.pass
+                                      ? "bg-[#15803d]/10 text-[#15803d] border border-[#15803d]/30"
+                                      : "bg-[#b91c1c]/10 text-[#b91c1c] border border-[#b91c1c]/30"
+                                  }`}
+                                >
+                                  {r.pass ? "PASS" : "FAIL"}
+                                </span>
+                              </td>
+                              <td className="text-center font-bold tabular-nums text-[#003366]">#{r.sectionRank}</td>
+                            </>
+                          )}
+
+                          {/* Admin Only Delete Row */}
+                          {isAdmin && (
+                            <td className="text-center px-2 py-2">
+                              <button
+                                type="button"
+                                title="Delete student"
+                                onClick={() => {
+                                  if (confirm(`Delete student ${r.student.name} (${r.student.roll})?`)) {
+                                    examStore.deleteStudent(r.student.id);
+                                    void logAuditEvent("STUDENT_DELETE", { roll: r.student.roll, name: r.student.name });
+                                    toast.success("Student removed");
+                                  }
+                                }}
+                                className="p-1 rounded hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition cursor-pointer"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
 
                     {filtered.length === 0 && (
                       <tr>
                         <td
-                          colSpan={isAdmin ? 11 : 10}
+                          colSpan={isAdmin ? 4 + groupSubjects.length + 5 + 1 : 10}
                           className="text-center py-12 text-muted-foreground text-sm"
                         >
                           No students found in Section {section} matching your criteria.

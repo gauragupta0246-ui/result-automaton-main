@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   RgpvTopBar,
   RgpvBrandHeader,
@@ -68,6 +69,8 @@ function LoginPage() {
   const [otpCode, setOtpCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // OTP specific states
   const [otpSent, setOtpSent] = useState(false);
@@ -112,57 +115,102 @@ function LoginPage() {
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
-    if (!cleanEmail || !cleanEmail.includes("@")) {
-      toast.error("Please enter a valid official/institutional email address.");
+    if (!cleanEmail) {
+      alert("Please enter a valid email address.");
       return;
     }
 
     setLoading(true);
+    setErrorMessage("");
     try {
-      const res = await sendEmailOtp(cleanEmail);
-      if (res.success && res.code) {
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          shouldCreateUser: true,
+        },
+      });
+
+      if (error) {
+        alert("Failed to send OTP: " + error.message);
+        setErrorMessage("Failed to send OTP: " + error.message);
+      } else {
+        // Proceed to OTP input screen
         setOtpSent(true);
         setCountdown(60);
-        setLastDispatchedOtp(res.code);
+        setLastDispatchedOtp(null);
         toast.success(
-          `Verification code sent to ${cleanEmail}! Check your inbox or use code: ${res.code}`,
-          { duration: 10000 }
+          `Verification code sent to ${cleanEmail}! Please check your email inbox.`
         );
-      } else {
-        toast.error(res.error || "Failed to dispatch verification code.");
       }
-    } catch {
-      toast.error("Failed to dispatch verification code. Please try again.");
+    } catch (err: any) {
+      alert("Failed to send OTP: " + (err?.message || "Unknown error"));
+      setErrorMessage("Failed to send OTP: " + (err?.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
   };
 
-  // ─── Step 2: Verify 6-Digit Code & Sign In ───────────────────────────────────
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !otpCode.trim()) {
-      toast.error("Please enter both email and the 6-digit verification code.");
+  // ─── Step 2: Verify Code & Sign In ───────────────────────────────────
+  const handleVerifyOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanToken = otpCode.trim();
+
+    if (!cleanEmail || cleanToken.length !== 6) {
+      alert("Please enter the complete 6-digit verification code.");
       return;
     }
 
+    setIsSubmitting(true);
     setLoading(true);
-    try {
-      const res = await verifyEmailOtp(email, otpCode);
-      if (res.success) {
-        toast.success(
-          `Welcome to RGPV Portal! Authenticated as ${
-            res.role === "admin"
-              ? "Super Admin (Controller of Examinations)"
-              : "Faculty Evaluator (Staff)"
-          }`
-        );
-        navigate({ to: "/dashboard" });
-      } else {
-        toast.error(res.error || "Invalid verification code. Please try again.");
+
+    const allowedTypes: Array<"email" | "signup" | "magiclink"> = [
+      "email",
+      "signup",
+      "magiclink",
+    ];
+
+    let verified = false;
+    let serverError = "";
+
+    for (const otpType of allowedTypes) {
+      try {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: cleanEmail,
+          token: cleanToken,
+          type: otpType as any,
+        });
+
+        if (!error && (data?.session || data?.user)) {
+          verified = true;
+          break;
+        }
+        if (error) {
+          serverError = error.message;
+        }
+      } catch (err: any) {
+        serverError = err.message;
       }
-    } finally {
+    }
+
+    if (verified) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("exam_logged_out_flag");
+        localStorage.removeItem("exam_pending_email_otp");
+        const userProfile = {
+          id: `usr-${cleanEmail.replace(/[^a-z0-9]/g, "")}-${Date.now().toString(36)}`,
+          email: cleanEmail,
+          full_name: cleanEmail.split("@")[0].toUpperCase() + " (RGPV Faculty)",
+          role: cleanEmail === "gauragupta0246@gmail.com" ? "admin" : "employee",
+          created_at: new Date().toISOString(),
+        };
+        localStorage.setItem("exam_auth_profile_v2", JSON.stringify(userProfile));
+      }
+      window.location.href = "/dashboard";
+    } else {
+      setIsSubmitting(false);
       setLoading(false);
+      alert("Verification failed: " + (serverError || "Token has expired or is invalid"));
     }
   };
 
@@ -360,6 +408,12 @@ function LoginPage() {
                         placeholder="e.g. gauragupta0246@gmail.com or faculty@univ.ac.in"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleSendOtp();
+                          }
+                        }}
                         disabled={otpSent && loading}
                         className="pl-9 bg-white border-[#cbd5e1] text-[#0f172a] text-sm rounded-[4px] h-10 focus:border-[#002147] focus:ring-1 focus:ring-[#002147]"
                         required
@@ -383,38 +437,38 @@ function LoginPage() {
                       ) : (
                         <span className="flex items-center gap-1.5">
                           <KeyRound className="size-4 text-amber-300" />
-                          Send 6-Digit Verification Code to Email
+                          Send Verification Code to Email
                         </span>
                       )}
                     </Button>
                   ) : (
                     /* Step 2: Verification Code Input & Submit */
                     <form onSubmit={handleVerifyOtp} className="space-y-4 pt-1">
-                      {/* Alert banner displaying code */}
+                      {/* Alert banner */}
                       <div className="p-3 rounded-[4px] border border-emerald-300 bg-emerald-50 text-xs text-emerald-950 space-y-1">
                         <div className="flex items-center gap-1.5 font-bold text-emerald-900">
                           <CheckCircle2 className="size-4 text-emerald-600" />
                           <span>Verification Code Dispatched!</span>
                         </div>
                         <p className="text-[11px] text-emerald-800">
-                          A 6-digit login verification code was sent to{" "}
-                          <strong>{email}</strong>.
+                          A 6-digit verification code was sent to{" "}
+                          <strong>{email}</strong>. Please check your email inbox.
                         </p>
-                        {lastDispatchedOtp && (
-                          <div className="mt-1 pt-1 border-t border-emerald-200 flex items-center justify-between text-[11px]">
-                            <span>Direct Test Verification Code:</span>
-                            <span className="font-mono font-black text-sm bg-white px-2 py-0.5 rounded border border-emerald-300 text-emerald-900">
-                              {lastDispatchedOtp}
-                            </span>
-                          </div>
-                        )}
                       </div>
 
-                      {/* 6-Digit OTP Code Input */}
+                      {/* Error message banner */}
+                      {errorMessage && (
+                        <div className="p-3 rounded-[4px] border border-rose-300 bg-rose-50 text-xs text-rose-950 flex items-center gap-2">
+                          <AlertCircle className="size-4 text-rose-600 shrink-0" />
+                          <span className="font-semibold">{errorMessage}</span>
+                        </div>
+                      )}
+
+                      {/* Verification Code Input */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold text-[#002147] uppercase tracking-wider">
-                            Enter 6-Digit Code *
+                            ENTER VERIFICATION CODE
                           </label>
                           <span className="text-[11px] text-[#475569]">
                             {countdown > 0 ? (
@@ -422,7 +476,10 @@ function LoginPage() {
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => handleSendOtp()}
+                                onClick={() => {
+                                  setErrorMessage("");
+                                  handleSendOtp();
+                                }}
                                 className="text-[#002147] hover:underline font-bold cursor-pointer"
                               >
                                 Resend Code
@@ -436,9 +493,12 @@ function LoginPage() {
                           <Input
                             type="text"
                             maxLength={6}
-                            placeholder="e.g. 123456"
+                            placeholder="Enter 6-digit code"
                             value={otpCode}
-                            onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ""))}
+                            onChange={(e) => {
+                              setErrorMessage("");
+                              setOtpCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6));
+                            }}
                             className="pl-9 font-mono tracking-widest text-base font-bold bg-white border-[#cbd5e1] text-[#0f172a] rounded-[4px] h-11 focus:border-[#002147] focus:ring-1 focus:ring-[#002147]"
                             autoFocus
                             required
@@ -453,6 +513,7 @@ function LoginPage() {
                           onClick={() => {
                             setOtpSent(false);
                             setOtpCode("");
+                            setErrorMessage("");
                           }}
                           className="h-10 text-xs border-[#cbd5e1] text-[#475569] rounded-[4px]"
                         >
@@ -461,11 +522,20 @@ function LoginPage() {
 
                         <Button
                           type="submit"
-                          disabled={loading || otpCode.length < 4}
+                          disabled={isSubmitting || loading || !otpCode.trim()}
                           className="flex-1 bg-[#002147] hover:bg-[#003875] text-white cursor-pointer h-10 rounded-[4px] font-bold text-sm tracking-wide shadow-sm"
                         >
-                          {loading ? "Verifying Code…" : "Verify Code & Sign In"}
-                          <ArrowRight className="size-4 ml-1.5" />
+                          {isSubmitting ? (
+                            <span className="flex items-center gap-2">
+                              <RefreshCw className="size-4 animate-spin" />
+                              Verifying Code…
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5">
+                              Verify Code & Sign In
+                              <ArrowRight className="size-4 ml-1.5" />
+                            </span>
+                          )}
                         </Button>
                       </div>
                     </form>
