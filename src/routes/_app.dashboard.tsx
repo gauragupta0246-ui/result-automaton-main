@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Users,
   GraduationCap,
@@ -62,6 +63,16 @@ export const Route = createFileRoute("/_app/dashboard")({
 const EXAMS: ExamType[] = ["midsem", "put"];
 
 function Dashboard() {
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = "/login";
+      }
+    };
+    checkAuth();
+  }, []);
+
   const state = useExamStore((s) => s);
   const [exam, setExam] = useState<ExamType>("midsem");
 
