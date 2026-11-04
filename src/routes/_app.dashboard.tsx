@@ -64,21 +64,43 @@ export const Route = createFileRoute("/_app/dashboard")({
 const EXAMS: ExamType[] = ["midsem", "put"];
 
 function Dashboard() {
+  const [role, setRole] = useState<"admin" | "faculty">("admin");
+  const [isLoadingRole, setIsLoadingRole] = useState<boolean>(true);
+
   useEffect(() => {
-    const checkAuthAndSyncRole = async () => {
+    const fetchRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         window.location.href = "/login";
         return;
       }
 
-      await syncUserRoleFromDatabase(
-        session.user.id,
-        session.user.email || "",
-        (session.user.user_metadata?.full_name as string)
-      );
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (profile?.role) {
+        setRole(profile.role as "admin" | "faculty");
+        void syncUserRoleFromDatabase(
+          session.user.id,
+          session.user.email || "",
+          (session.user.user_metadata?.full_name as string)
+        );
+      } else {
+        // Default fallback: keep admin if first user or explicitly set
+        setRole("admin");
+        void syncUserRoleFromDatabase(
+          session.user.id,
+          session.user.email || "",
+          (session.user.user_metadata?.full_name as string)
+        );
+      }
+      setIsLoadingRole(false);
     };
-    checkAuthAndSyncRole();
+
+    fetchRole();
   }, []);
 
   const state = useExamStore((s) => s);

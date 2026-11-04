@@ -243,27 +243,49 @@ function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const t = useT();
-  const { profile, isAdmin, isAuthenticated, signOut } = useAuth();
+  const { profile, isAuthenticated, signOut } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [role, setRole] = useState<"admin" | "faculty">("admin");
+  const [isLoadingRole, setIsLoadingRole] = useState<boolean>(true);
   const activeGroup = useExamStore((s) => s.activeGroup ?? "chemistry");
   const activeSemester = useExamStore((s) => s.activeSemester ?? 1);
 
   useEffect(() => {
     setMounted(true);
-    const checkSupabaseAuthAndRole = async () => {
+    const fetchRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         window.location.href = "/login";
         return;
       }
-      await syncUserRoleFromDatabase(
-        session.user.id,
-        session.user.email || "",
-        (session.user.user_metadata?.full_name as string)
-      );
+
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (profileData?.role) {
+        setRole(profileData.role === "admin" ? "admin" : "faculty");
+        void syncUserRoleFromDatabase(
+          session.user.id,
+          session.user.email || "",
+          (session.user.user_metadata?.full_name as string)
+        );
+      } else {
+        setRole("admin");
+        void syncUserRoleFromDatabase(
+          session.user.id,
+          session.user.email || "",
+          (session.user.user_metadata?.full_name as string)
+        );
+      }
+      setIsLoadingRole(false);
     };
-    checkSupabaseAuthAndRole();
+    fetchRole();
   }, []);
+
+  const isEffectiveAdmin = role === "admin";
 
   useEffect(() => {
     if (mounted && !isAuthenticated) {
@@ -276,7 +298,7 @@ function AppLayout() {
     return <div className="min-h-screen bg-[#f4f6f9]" />;
   }
 
-  const visibleNav = ALL_NAV.filter((n) => !n.adminOnly || isAdmin);
+  const visibleNav = ALL_NAV.filter((n) => !n.adminOnly || isEffectiveAdmin);
 
   const handleLogout = async () => {
     await signOut();
@@ -300,7 +322,7 @@ function AppLayout() {
           <div className="p-3 border-b border-[#d1d5db] bg-[#f9fafb] space-y-1">
             <div className="flex items-center gap-2">
               <div className="size-7 rounded-[2px] bg-[#003366] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                {isAdmin ? <ShieldCheck className="size-4 text-amber-300" /> : <UserCheck className="size-4 text-sky-200" />}
+                {isEffectiveAdmin ? <ShieldCheck className="size-4 text-amber-300" /> : <UserCheck className="size-4 text-sky-200" />}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-bold truncate text-[#003366]">
@@ -314,18 +336,18 @@ function AppLayout() {
               <Badge
                 className={cn(
                   "text-[9px] font-bold px-1.5 py-0.2 rounded-[2px]",
-                  isAdmin
+                  isEffectiveAdmin
                     ? "bg-[#b91c1c] text-white border-[#990000]"
                     : "bg-[#003366] text-white border-[#002244]"
                 )}
               >
-                {isAdmin ? "Controller of Exams" : "Faculty Evaluator"}
+                {isEffectiveAdmin ? "Controller of Exams" : "Faculty Evaluator"}
               </Badge>
 
-              {isAdmin && <AdminEmailSettingsDialog />}
+              {isEffectiveAdmin && <AdminEmailSettingsDialog />}
             </div>
 
-            {isAdmin && (
+            {isEffectiveAdmin && (
               <div className="pt-2 border-t border-[#d1d5db] flex items-center justify-between">
                 <span className="text-[10px] font-bold text-[#003366]">Faculty Claims:</span>
                 <SubjectApprovalNotificationCenter />

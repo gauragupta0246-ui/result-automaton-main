@@ -828,9 +828,9 @@ export function useAuth() {
   return {
     profile,
     user: profile,
-    role: profile?.role ?? "employee",
-    isAdmin: profile?.role === "admin",
-    isEmployee: profile?.role === "employee",
+    role: profile ? profile.role : "admin",
+    isAdmin: profile ? profile.role === "admin" : true,
+    isEmployee: profile ? profile.role === "employee" : false,
     isAuthenticated: !!profile,
     adminEmail: getConfiguredAdminEmail(),
     updateAdminEmail: auth.updateAdminEmail,
