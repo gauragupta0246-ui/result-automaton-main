@@ -19,7 +19,7 @@ import {
 
 import { useT, useLang, langStore, type TKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, syncUserRoleFromDatabase } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,36 +72,73 @@ function UniversityEmblem({ className = "size-8" }: { className?: string }) {
 }
 
 function AdminEmailSettingsDialog() {
-  const { profile, updateAdminEmail } = useAuth();
+  const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [newEmail, setNewEmail] = useState(profile?.email || "");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (profile?.email) setNewEmail(profile.email);
   }, [profile?.email]);
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEmail.trim() || !newEmail.includes("@")) {
-      toast.error("Please enter a valid email address");
+  const handleChangeAdminEmail = async (newEmailInput: string) => {
+    const cleanNewEmail = newEmailInput.trim().toLowerCase();
+    if (!cleanNewEmail || !cleanNewEmail.includes("@")) {
+      alert("Please enter a valid email address.");
       return;
     }
-    const ok = updateAdminEmail(newEmail.trim());
-    if (ok) {
-      toast.success(`Admin email successfully updated to: ${newEmail.trim()}`);
-      setOpen(false);
-    } else {
-      toast.error("Failed to update admin email");
+
+    let { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      user = sessionData?.session?.user ?? null;
+    }
+
+    if (!user || !cleanNewEmail) {
+      alert("No active authenticated user found.");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      // 1. Update the email in Supabase Auth
+      const { error: authError } = await supabase.auth.updateUser({
+        email: cleanNewEmail,
+      });
+
+      if (authError) {
+        alert("Error updating auth email: " + authError.message);
+        return;
+      }
+
+      // 2. Update the email in public.profiles table to retain the admin role
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ email: cleanNewEmail })
+        .eq("id", user.id);
+
+      if (profileError) {
+        alert("Error updating profile record: " + profileError.message);
+        return;
+      }
+
+      alert(
+        "Admin email updated successfully! A confirmation link has been sent to the new email address. Please verify it, then sign in with the new email."
+      );
+
+      // 3. Optional: Sign out and redirect to login
+      await supabase.auth.signOut();
+      window.location.href = "/login";
+    } catch (err: any) {
+      alert("Unexpected error: " + err.message);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const handleResetDefault = () => {
-    const ok = updateAdminEmail("gauragupta0246@gmail.com");
-    if (ok) {
-      setNewEmail("gauragupta0246@gmail.com");
-      toast.success("Admin email reset to default: gauragupta0246@gmail.com");
-      setOpen(false);
-    }
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleChangeAdminEmail(newEmail);
   };
 
   return (
@@ -129,20 +166,21 @@ function AdminEmailSettingsDialog() {
 
         <form onSubmit={handleSave} className="space-y-4 pt-2">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[#0b2545] uppercase">Super Admin Email Address</label>
+            <label className="text-xs font-bold text-[#0b2545] uppercase">New Super Admin Email *</label>
             <div className="relative">
               <Mail className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="gauragupta0246@gmail.com"
+                placeholder="e.g. newadmin@rgpv.ac.in"
                 className="pl-9 font-mono text-sm bg-white border-[#cbd5e1] rounded-[4px]"
+                disabled={isUpdating}
                 required
               />
             </div>
             <p className="text-[11px] text-[#475569]">
-              Configured default: <code className="text-[#0b2545] font-bold">gauragupta0246@gmail.com</code>
+              Current email: <code className="text-[#0b2545] font-bold">{profile?.email || "Not set"}</code>
             </p>
           </div>
 
@@ -151,17 +189,19 @@ function AdminEmailSettingsDialog() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleResetDefault}
+              onClick={() => setOpen(false)}
+              disabled={isUpdating}
               className="text-xs border-[#cbd5e1] rounded-[4px]"
             >
-              Reset to Default
+              Cancel
             </Button>
             <Button
               type="submit"
               size="sm"
+              disabled={isUpdating || !newEmail.trim()}
               className="bg-[#0b2545] hover:bg-[#133966] text-white text-xs font-bold rounded-[4px] cursor-pointer"
             >
-              Save Email
+              {isUpdating ? "Updating Email…" : "Update Admin Email"}
             </Button>
           </DialogFooter>
         </form>
@@ -210,13 +250,19 @@ function AppLayout() {
 
   useEffect(() => {
     setMounted(true);
-    const checkSupabaseAuth = async () => {
+    const checkSupabaseAuthAndRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session?.user) {
         window.location.href = "/login";
+        return;
       }
+      await syncUserRoleFromDatabase(
+        session.user.id,
+        session.user.email || "",
+        (session.user.user_metadata?.full_name as string)
+      );
     };
-    checkSupabaseAuth();
+    checkSupabaseAuthAndRole();
   }, []);
 
   useEffect(() => {

@@ -22,7 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth";
+import { useAuth, syncUserRoleFromDatabase } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   RgpvTopBar,
@@ -194,17 +194,17 @@ function LoginPage() {
     }
 
     if (verified) {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("exam_logged_out_flag");
-        localStorage.removeItem("exam_pending_email_otp");
-        const userProfile = {
-          id: `usr-${cleanEmail.replace(/[^a-z0-9]/g, "")}-${Date.now().toString(36)}`,
-          email: cleanEmail,
-          full_name: cleanEmail.split("@")[0].toUpperCase() + " (RGPV Faculty)",
-          role: cleanEmail === "gauragupta0246@gmail.com" ? "admin" : "employee",
-          created_at: new Date().toISOString(),
-        };
-        localStorage.setItem("exam_auth_profile_v2", JSON.stringify(userProfile));
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const user = sessionData?.session?.user;
+        const uid = user?.id || `usr-${cleanEmail.replace(/[^a-z0-9]/g, "")}`;
+        await syncUserRoleFromDatabase(
+          uid,
+          cleanEmail,
+          (user?.user_metadata?.full_name as string)
+        );
+      } catch (err) {
+        console.warn("Failed syncing database role after verification:", err);
       }
       window.location.href = "/dashboard";
     } else {

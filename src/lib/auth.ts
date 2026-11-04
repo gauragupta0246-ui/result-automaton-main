@@ -67,21 +67,6 @@ function loadInitialProfile(): UserProfile | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-    
-    // Auto-initialize with configured Super Admin so admin page opens immediately and smoothly
-    const isExplicitlyLoggedOut = localStorage.getItem("exam_logged_out_flag") === "true";
-    if (!isExplicitlyLoggedOut) {
-      const email = getConfiguredAdminEmail();
-      const initialAdmin: UserProfile = {
-        id: "00000000-0000-0000-0000-000000000001",
-        email,
-        full_name: "Super Admin (Teacher)",
-        role: "admin",
-        created_at: new Date().toISOString(),
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialAdmin));
-      return initialAdmin;
-    }
   } catch {}
   return null;
 }
@@ -96,7 +81,7 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
-function setProfile(profile: UserProfile | null) {
+export function setProfile(profile: UserProfile | null) {
   authState = { ...authState, profile, loading: false };
   if (typeof window !== "undefined") {
     if (profile) {
@@ -187,6 +172,141 @@ export function recordLocalRegisteredUser(profile: UserProfile) {
     localStorage.setItem("exam_registered_users_v2", JSON.stringify(users));
   } catch {}
 }
+
+/**
+ * Synchronizes user role directly with Supabase profiles table.
+ * Implements persistent, first-come first-served Super Admin assignment:
+ * 1. Checks if the user already exists in profiles. If so, retains their established role.
+ * 2. If user does not exist in profiles, checks if any admin already exists:
+ *    const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'admin');
+ *    let assignedRole = 'employee';
+ *    if (count === 0) assignedRole = 'admin';
+ * 3. Inserts the user record into profiles with their assignedRole.
+ * 4. Strictly updates local profile state and returns UserProfile.
+ */
+export async function syncUserRoleFromDatabase(
+  userId: string,
+  email: string,
+  fullName?: string
+): Promise<UserProfile> {
+  const cleanEmail = email.trim().toLowerCase();
+  let assignedRole: AppRole = "employee";
+  let establishedName = fullName || cleanEmail.split("@")[0].toUpperCase() + " (Faculty)";
+
+  try {
+    // 1. Check if user already exists in profiles
+    const { data: existingProfile, error: fetchError } = await supabase
+      .from("profiles")
+      .select("id, role, full_name, email")
+      .or(`id.eq.${userId},email.eq.${cleanEmail}`)
+      .maybeSingle();
+
+    if (!fetchError && existingProfile?.role) {
+      // Retain established role from database
+      assignedRole = (existingProfile.role === "admin" ? "admin" : "employee") as AppRole;
+      if (existingProfile.full_name) {
+        establishedName = existingProfile.full_name;
+      }
+    } else {
+      // 2. Check if an admin already exists in the system
+      const { count } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "admin");
+
+      // First-come, first-served: If no admin exists yet, make this first user Super Admin
+      if (count === 0) {
+        assignedRole = "admin";
+        establishedName = fullName || cleanEmail.split("@")[0].toUpperCase() + " (Super Admin)";
+      } else {
+        assignedRole = "employee";
+        establishedName = fullName || cleanEmail.split("@")[0].toUpperCase() + " (Faculty)";
+      }
+
+      // 3. Insert this user record into profiles
+      await supabase.from("profiles").upsert({
+        id: userId,
+        email: cleanEmail,
+        full_name: establishedName,
+        role: assignedRole,
+      });
+    }
+  } catch (err) {
+    console.warn("Database role sync error:", err);
+  }
+
+  const userProfile: UserProfile = {
+    id: userId,
+    email: cleanEmail,
+    full_name: establishedName,
+    role: assignedRole,
+    created_at: new Date().toISOString(),
+  };
+
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("exam_logged_out_flag");
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(userProfile));
+  }
+  setProfile(userProfile);
+  recordLocalRegisteredUser(userProfile);
+
+  return userProfile;
+}
+
+/**
+ * Changes the Admin email address in Supabase Auth and updates public.profiles table.
+ */
+export const handleChangeAdminEmail = async (newEmailInput: string) => {
+  const cleanNewEmail = newEmailInput.trim().toLowerCase();
+  if (!cleanNewEmail || !cleanNewEmail.includes("@")) {
+    alert("Please enter a valid email address.");
+    return;
+  }
+
+  let { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    user = sessionData?.session?.user ?? null;
+  }
+
+  if (!user || !cleanNewEmail) {
+    alert("No active authenticated user found.");
+    return;
+  }
+
+  try {
+    // 1. Update the email in Supabase Auth
+    const { error: authError } = await supabase.auth.updateUser({
+      email: cleanNewEmail,
+    });
+
+    if (authError) {
+      alert("Error updating auth email: " + authError.message);
+      return;
+    }
+
+    // 2. Update the email in public.profiles table to retain the admin role
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ email: cleanNewEmail })
+      .eq("id", user.id);
+
+    if (profileError) {
+      alert("Error updating profile record: " + profileError.message);
+      return;
+    }
+
+    alert(
+      "Admin email updated successfully! A confirmation link has been sent to the new email address. Please verify it, then sign in with the new email."
+    );
+
+    // 3. Optional: Sign out and redirect to login
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  } catch (err: any) {
+    alert("Unexpected error: " + err.message);
+  }
+};
 
 export const auth = {
   getProfile: () => authState.profile,
@@ -673,69 +793,20 @@ export const auth = {
   },
 };
 
-// Listen to Supabase Auth State changes (Handles Google OAuth redirect return)
+// Listen to Supabase Auth State changes
 if (typeof window !== "undefined") {
   supabase.auth.onAuthStateChange(async (event, session) => {
     if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session?.user) {
       const user = session.user;
       const cleanEmail = (user.email ?? "").trim().toLowerCase();
-
-      // Check profiles table
       try {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("id, email, full_name, role, created_at")
-          .eq("id", user.id)
-          .single();
-
-        let profile: UserProfile;
-        if (profileData) {
-          profile = {
-            id: profileData.id,
-            email: profileData.email,
-            full_name:
-              profileData.full_name ||
-              (user.user_metadata?.full_name as string) ||
-              cleanEmail.split("@")[0],
-            role: (profileData.role as AppRole) || "employee",
-            created_at: profileData.created_at,
-          };
-        } else {
-          // Automated First-User Super Admin Logic for Google Auth
-          const adminCount = await getExistingAdminCount();
-          const assignedRole: AppRole = adminCount === 0 ? "admin" : "employee";
-
-          profile = {
-            id: user.id,
-            email: cleanEmail,
-            full_name:
-              (user.user_metadata?.full_name as string) ||
-              (user.user_metadata?.name as string) ||
-              cleanEmail.split("@")[0],
-            role: assignedRole,
-            created_at: new Date().toISOString(),
-          };
-
-          await supabase.from("profiles").upsert({
-            id: profile.id,
-            email: profile.email,
-            full_name: profile.full_name,
-            role: assignedRole,
-          });
-        }
-
-        recordLocalRegisteredUser(profile);
-        setProfile(profile);
-
-        // Dispatch Login Alert for Google sign-in
-        void sendLoginSecurityAlert({
-          email: profile.email,
-          fullName: profile.full_name,
-          role: profile.role,
-          method: "google",
-        });
+        await syncUserRoleFromDatabase(
+          user.id,
+          cleanEmail,
+          (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string)
+        );
       } catch (err) {
-        console.warn("Failed syncing Google auth profile:", err);
+        console.warn("Failed syncing auth state profile:", err);
       }
     } else if (event === "SIGNED_OUT") {
       setProfile(null);

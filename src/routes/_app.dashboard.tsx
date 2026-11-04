@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { syncUserRoleFromDatabase } from "@/lib/auth";
 import {
   Users,
   GraduationCap,
@@ -64,13 +65,20 @@ const EXAMS: ExamType[] = ["midsem", "put"];
 
 function Dashboard() {
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthAndSyncRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session?.user) {
         window.location.href = "/login";
+        return;
       }
+
+      await syncUserRoleFromDatabase(
+        session.user.id,
+        session.user.email || "",
+        (session.user.user_metadata?.full_name as string)
+      );
     };
-    checkAuth();
+    checkAuthAndSyncRole();
   }, []);
 
   const state = useExamStore((s) => s);
